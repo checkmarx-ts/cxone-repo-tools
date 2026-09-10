@@ -1,0 +1,73 @@
+name: Build Documentation [called]
+on:
+  workflow_call:
+    inputs:
+      tag:
+        type: string
+        default: ''
+      whl_tag:
+        type: string
+        default: ''
+      buildonly:
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  build-ai-skill:
+    runs-on: ubuntu-latest
+    # runs-on: cx-public-ubuntu-x64
+    env:
+      SKILLROOT: ai/skills/cxone-repo-tools
+    steps:
+
+      - name: Fetch Code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: "3.12"
+
+      - name: Configure Pip index
+        run: |
+          pip config set global.index-url https://:${{ secrets.ECHO_LIBRARIES_ACCESS_KEY }}@pypi.echohq.com/simple
+
+      - name: Build Markdown Docs
+        run: |
+          pip install --no-cache-dir pydoc-markdown==4.8.2
+          pydoc-markdown
+
+      - name: Build install reference
+        run: |
+          export INSTALLMD="$SKILLROOT/references/install.md"
+
+          echo "Version: ${{ inputs.tag }}" > $INSTALLMD
+          echo "Github Repository: https://github.com/${{ github.repository }}" >> $INSTALLMD
+          echo "" >> $INSTALLMD
+          echo "# Pip Installation Commands" >> $INSTALLMD
+          echo "" >> $INSTALLMD
+          echo "## CLI Package" >> $INSTALLMD
+          echo "pip install https://github.com/${{ github.repository }}/releases/download/${{ inputs.tag }}/cxone_repo_tools-${{ inputs.whl_tag }}-py3-none-any.whl" >> $INSTALLMD
+          echo "" >> $INSTALLMD
+
+      - name: Add README.md as a reference
+        run: |
+          cp README.md $SKILLROOT/references/
+
+      - name: Add regional monikers reference
+        run: |
+          pip install .
+          python -c "from cxone_api import ApiRegionEndpoints; print(','.join(ApiRegionEndpoints.keys()));" > $SKILLROOT/references/region-monikers.md
+
+      - name: Zip skill
+        run: |
+          cd $SKILLROOT && zip -r "$OLDPWD/cxone-repo-tools-skill.zip" . && cd -
+          
+      - name: Upload skill artifact
+        if: ${{ ! inputs.buildonly }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: doc-skill-${{ github.run_number }}
+          path: ./*.zip
