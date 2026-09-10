@@ -17,8 +17,7 @@ permissions:
 
 jobs:
   build-ai-skill:
-    runs-on: ubuntu-latest
-    # runs-on: cx-public-ubuntu-x64
+    runs-on: cx-public-ubuntu-x64
     env:
       SKILLROOT: ai/skills/cxone-repo-tools
     steps:
