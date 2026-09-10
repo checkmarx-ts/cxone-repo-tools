@@ -17,7 +17,7 @@ permissions:
 
 jobs:
   execute-scan:
-    runs-on: cx-public-ubuntu-x64
+    runs-on: cx-private-ubuntu-x64
     permissions:
       contents: read
       pull-requests: write

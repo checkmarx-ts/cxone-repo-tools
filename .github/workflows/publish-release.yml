@@ -17,7 +17,7 @@ permissions:
 
 jobs:
   tag-repo:
-    runs-on: cx-public-ubuntu-x64
+    runs-on: cx-private-ubuntu-x64
     outputs:
       tag: ${{ steps.tag-string.outputs.tag }}
       whl_tag: ${{ steps.tag-string.outputs.whl_tag }}
@@ -54,7 +54,7 @@ jobs:
     needs: [tag-repo, publish-release]
     permissions:
       contents: write
-    runs-on: cx-public-ubuntu-x64
+    runs-on: cx-private-ubuntu-x64
     if: (failure() || cancelled()) && needs.tag-repo.result == 'success'
     steps:
       - name: Fetch Code
@@ -64,7 +64,7 @@ jobs:
         run: git push origin ':refs/tags/${{ needs.tag-repo.outputs.tag }}'
 
   artifact-cleanup:
-    runs-on: cx-public-ubuntu-x64
+    runs-on: cx-private-ubuntu-x64
     needs: [publish-release]
     if: always()
     steps:
@@ -92,7 +92,7 @@ jobs:
 
 
   publish-release:
-    runs-on: cx-public-ubuntu-x64
+    runs-on: cx-private-ubuntu-x64
     permissions:
       contents: write
     needs: 
