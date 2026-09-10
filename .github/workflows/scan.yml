@@ -22,6 +22,8 @@ jobs:
       contents: read
       pull-requests: write
       statuses: write
+    env:
+      VIRTUALENV_NO_PERIODIC_UPDATE: 1
     steps:
       - name: Fetch Code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
