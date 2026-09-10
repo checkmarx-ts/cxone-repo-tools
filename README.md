@@ -90,7 +90,11 @@ The recovery files have the following purpose:
   before the project is re-connected to a new repository.  This means no scans will be orchestrated by Checkmarx One
   for that project until the project is re-connected to an SCM.
 
-* If the program is interrupted before a project is converted fully, the recovery process should finish the conversion.
+* If the program is interrupted before a project is converted fully, the recovery process should
+  finish the conversion on the next run.
+
+* Recovery failures can happen when repositories are misconfigured or have been renamed and the stored repository
+  URL is no longer valid.  The recovery file can be modified to perform the import for the correct repository URL.
 
 * If a project is disconnected and there is no recovery file, it can be manually re-connected by providing required
   additional parameters.
