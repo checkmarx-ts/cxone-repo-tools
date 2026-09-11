@@ -64,10 +64,11 @@ jobs:
   remove-tag-on-failure:
     needs: [tag-repo, publish-release]
     permissions:
-      # Need to remove the tag if there is a failure
-      contents: write
+      contents: write # Need to remove the tag if there is a failure
     runs-on: cx-private-ubuntu-x64
     if: (failure() || cancelled()) && needs.tag-repo.result == 'success'
+    env:
+      TAG: ${{ needs.tag-repo.outputs.tag }}
     steps:
       - name: Fetch Code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
@@ -75,7 +76,7 @@ jobs:
           persist-credentials: false
 
       - name: Remove tag
-        run: git push origin ':refs/tags/${{ needs.tag-repo.outputs.tag }}'
+        run: git push origin ":refs/tags/${TAG}"
 
   artifact-cleanup:
     runs-on: cx-private-ubuntu-x64
@@ -114,6 +115,8 @@ jobs:
       - tag-repo
       - build-wheel
       - build-docs
+    env:
+      TAG: ${{ needs.tag-repo.outputs.tag }}
     steps:
       - name: Fetch Code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
@@ -136,7 +139,7 @@ jobs:
 
       - name: Make release text
         run: |
-          echo "# cxone-repo-tools ${{ needs.tag-repo.outputs.tag }}" > release.md
+          echo "# cxone-repo-tools ${TAG}" > release.md
 
           echo "" >> release.md
           python3 .github/workflows/scripts/json2md.py release_notes.json ${VERSION} >> release.md
@@ -144,7 +147,7 @@ jobs:
 
           WHEEL_NAME=$(basename $(ls *.whl))
           WHEEL_HASH=$(pip3 hash $WHEEL_NAME | grep "^--")
-          RELEASE_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${{ needs.tag-repo.outputs.tag }}/$WHEEL_NAME"
+          RELEASE_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/$WHEEL_NAME"
 
           echo '```' >> release.md
           echo $RELEASE_URL >> release.md
