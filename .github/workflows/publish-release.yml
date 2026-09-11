@@ -66,14 +66,9 @@ jobs:
           git config --global user.email "${GITHUB_TRIGGERING_ACTOR}"
           git config --global user.name "${GITHUB_TRIGGERING_ACTOR}"
 
-          # git remote set-url origin https://${GITHUB_TRIGGERING_ACTOR}:${TOKEN}@${GITHUB_SERVER_URL#*://}/${GITHUB_REPOSITORY}.git
-          # git config --global url.https://${GITHUB_TRIGGERING_ACTOR}:${TOKEN}@github.com/.insteadOf https://github.com/
-          
-          git remote -v
-
+          # This is done this way because Zizamor doesn't like to allow actions/checkout
+          # to persist credentials.
           git tag "${TAG}"
-          # git -c http.extraHeader="Authorization: Bearer ${TOKEN}" push origin "${TAG}"
-          # git push origin "${TAG}"
           git push https://${GITHUB_TRIGGERING_ACTOR}:${TOKEN}@${GITHUB_SERVER_URL#*://}/${GITHUB_REPOSITORY}.git "${TAG}"
 
   remove-tag-on-failure:
