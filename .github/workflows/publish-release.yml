@@ -54,18 +54,18 @@ jobs:
 
       - name: Fetch Code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-        with:
-          persist-credentials: false
+        # with:
+        #   persist-credentials: false
 
       - name: Set Tag
         env:
           TAG: ${{ steps.tag-string.outputs.tag }}
           TOKEN: ${{ github.token }}
         run: |
-          git config --global user.email "${GITHUB_TRIGGERING_ACTOR}"
-          git config --global user.name "${GITHUB_TRIGGERING_ACTOR}"
-          
-          git remote set-url origin https://${TOKEN}@${GITHUB_SERVER_URL#*://}/${GITHUB_REPOSITORY}.git
+          # git config --global user.email "${GITHUB_TRIGGERING_ACTOR}"
+          # git config --global user.name "${GITHUB_TRIGGERING_ACTOR}"
+
+          # git remote set-url origin https://${TOKEN}@${GITHUB_SERVER_URL#*://}/${GITHUB_REPOSITORY}.git
           # git config --global url.https://${TOKEN}@github.com/.insteadOf https://github.com/
           
           git remote -v
