@@ -44,26 +44,27 @@ jobs:
           echo "tag=$TAG" >> $GITHUB_OUTPUT
           echo "whl_tag=$WHL_TAG" >> $GITHUB_OUTPUT
 
+      - name: Fetch Code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          persist-credentials: false
+          fetch-tags: true
+
       - name: Validate no tag
         env:
           TAG: ${{ steps.tag-string.outputs.tag }}
         run: |
           set +e
-          git clone --branch "${TAG}" --depth=1 ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY} > /dev/null 2>&1 && exit 1
+          git checkout "${TAG}" > /dev/null 2>&1 && exit 1
           set -e
-
-      - name: Fetch Code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-        with:
-          persist-credentials: false
 
       - name: Set Tag
         env:
           TAG: ${{ steps.tag-string.outputs.tag }}
           TOKEN: ${{ github.token }}
         run: |
-          # git config --global user.email "${GITHUB_TRIGGERING_ACTOR}"
-          # git config --global user.name "${GITHUB_TRIGGERING_ACTOR}"
+          git config --global user.email "${GITHUB_TRIGGERING_ACTOR}"
+          git config --global user.name "${GITHUB_TRIGGERING_ACTOR}"
 
           # git remote set-url origin https://${TOKEN}@${GITHUB_SERVER_URL#*://}/${GITHUB_REPOSITORY}.git
           # git config --global url.https://${TOKEN}@github.com/.insteadOf https://github.com/
