@@ -61,6 +61,7 @@ jobs:
         env:
           TAG: ${{ steps.tag-string.outputs.tag }}
         run: |
+          echo ACTOR: ${GITHUB_TRIGGERING_ACTOR}
           git config --global user.email "${GITHUB_TRIGGERING_ACTOR}"
           git config --global user.name "${GITHUB_TRIGGERING_ACTOR}"
           git tag "${TAG}"
