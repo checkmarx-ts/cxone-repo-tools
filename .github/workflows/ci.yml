@@ -98,7 +98,7 @@ jobs:
           black --target-version py312 --check .
 
   build-wheel:
-    name: Build the wheel
+    name: Call
     uses: ./.github/workflows/build-whl.yml
     secrets:
       ECHO_LIBRARIES_ACCESS_KEY: ${{ secrets.ECHO_LIBRARIES_ACCESS_KEY }}
@@ -106,7 +106,7 @@ jobs:
       buildonly: true
   
   build-docs:
-    name: Build the docs
+    name: Call
     uses: ./.github/workflows/build-docs.yml
     secrets:
       ECHO_LIBRARIES_ACCESS_KEY: ${{ secrets.ECHO_LIBRARIES_ACCESS_KEY }}

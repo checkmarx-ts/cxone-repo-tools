@@ -95,7 +95,7 @@ jobs:
             doc-skill-${{ github.run_number }}
 
   build-wheel:
-    name: Build the wheel
+    name: Call
     needs: [tag-repo]
     uses: ./.github/workflows/build-whl.yml
     secrets:
@@ -105,7 +105,7 @@ jobs:
       whl_tag: ${{ needs.tag-repo.outputs.whl_tag }}
 
   build-docs:
-    name: Build the documentation
+    name: Call
     needs: [tag-repo]
     uses: ./.github/workflows/build-docs.yml
     secrets:
