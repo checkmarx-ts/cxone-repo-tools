@@ -11,6 +11,9 @@ on:
         required: true
         type: boolean
 
+concurrency:
+  group: ${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -21,6 +24,7 @@ env:
 
 jobs:
   tag-repo:
+    name: Tag the repo with a version
     runs-on: cx-private-ubuntu-x64
     outputs:
       tag: ${{ steps.tag-string.outputs.tag }}
@@ -61,6 +65,7 @@ jobs:
           git push origin "${TAG}"
 
   remove-tag-on-failure:
+    name: Remove tag if there is a failure
     needs: [tag-repo, publish-release]
     permissions:
       contents: write # Need to remove the tag if there is a failure
@@ -78,6 +83,7 @@ jobs:
         run: git push origin ":refs/tags/${TAG}"
 
   artifact-cleanup:
+    name: Clean up generated artifacts after publish
     runs-on: cx-private-ubuntu-x64
     needs: [publish-release]
     if: always()
@@ -89,6 +95,7 @@ jobs:
             doc-skill-${{ github.run_number }}
 
   build-wheel:
+    name: Build the wheel
     needs: [tag-repo]
     uses: ./.github/workflows/build-whl.yml
     secrets: inherit
@@ -97,6 +104,7 @@ jobs:
       whl_tag: ${{ needs.tag-repo.outputs.whl_tag }}
 
   build-docs:
+    name: Build the documentation
     needs: [tag-repo]
     uses: ./.github/workflows/build-docs.yml
     secrets: inherit
@@ -106,6 +114,7 @@ jobs:
 
 
   publish-release:
+    name: Publish the release
     runs-on: cx-private-ubuntu-x64
     permissions:
       contents: write # Can't publish a release unless this can write.
