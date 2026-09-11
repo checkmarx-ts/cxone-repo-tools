@@ -66,13 +66,14 @@ jobs:
           git config --global user.email "${GITHUB_TRIGGERING_ACTOR}"
           git config --global user.name "${GITHUB_TRIGGERING_ACTOR}"
 
-          # git remote set-url origin https://${TOKEN}@${GITHUB_SERVER_URL#*://}/${GITHUB_REPOSITORY}.git
-          # git config --global url.https://${TOKEN}@github.com/.insteadOf https://github.com/
+          git remote set-url origin https://${GITHUB_TRIGGERING_ACTOR}:${TOKEN}@${GITHUB_SERVER_URL#*://}/${GITHUB_REPOSITORY}.git
+          # git config --global url.https://${GITHUB_TRIGGERING_ACTOR}:${TOKEN}@github.com/.insteadOf https://github.com/
           
           git remote -v
 
           git tag "${TAG}"
-          git -c http.extraHeader="Authorization: Bearer ${TOKEN}" push origin "${TAG}"
+          # git -c http.extraHeader="Authorization: Bearer ${TOKEN}" push origin "${TAG}"
+          git push origin "${TAG}"
 
   remove-tag-on-failure:
     name: Remove tag if there is a failure
