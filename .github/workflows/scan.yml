@@ -19,8 +19,10 @@ jobs:
   execute-scan:
     runs-on: cx-private-ubuntu-x64
     permissions:
-      contents: read
+      # Need to make PR decorations
       pull-requests: write
+
+      # Need to update statuses to break build
       statuses: write
     env:
       VIRTUALENV_NO_PERIODIC_UPDATE: 1
