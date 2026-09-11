@@ -60,14 +60,15 @@ jobs:
       - name: Set Tag
         env:
           TAG: ${{ steps.tag-string.outputs.tag }}
+          TOKEN: ${{ github.token }}
         run: |
-          env
-
           git config --global user.email "${GITHUB_TRIGGERING_ACTOR}"
           git config --global user.name "${GITHUB_TRIGGERING_ACTOR}"
-
-          git config --global -l
           
+          git remote set-url origin https://${TOKEN}@${GITHUB_SERVER_URL#*://}/${GITHUB_REPOSITORY}.git
+          # git config --global url.https://${TOKEN}@github.com/.insteadOf https://github.com/
+          
+          git remote -v
 
           git tag "${TAG}"
           git push origin "${TAG}"
@@ -164,7 +165,7 @@ jobs:
 
           WHEEL_NAME=$(basename $(ls *.whl))
           WHEEL_HASH=$(pip3 hash $WHEEL_NAME | grep "^--")
-          RELEASE_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/$WHEEL_NAME"
+          RELEASE_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/download/${TAG}/${WHEEL_NAME}"
 
           echo '```' >> release.md
           echo $RELEASE_URL >> release.md
