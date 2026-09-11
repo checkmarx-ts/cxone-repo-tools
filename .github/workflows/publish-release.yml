@@ -54,8 +54,8 @@ jobs:
 
       - name: Fetch Code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-        # with:
-        #   persist-credentials: false
+        with:
+          persist-credentials: false
 
       - name: Set Tag
         env:
@@ -71,7 +71,7 @@ jobs:
           git remote -v
 
           git tag "${TAG}"
-          git push origin "${TAG}"
+          git -c http.extraHeader="Authorization: Bearer ${TOKEN}" push origin "${TAG}"
 
   remove-tag-on-failure:
     name: Remove tag if there is a failure
