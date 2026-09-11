@@ -15,6 +15,10 @@ on:
 permissions:
   contents: read
 
+env:
+  VERSION: ${{ inputs.version }}
+  PRERELEASE: ${{ inputs.prerelease }}
+
 jobs:
   tag-repo:
     runs-on: cx-private-ubuntu-x64
@@ -27,11 +31,11 @@ jobs:
       - name: Create tag
         id: tag-string
         run: |
-          [ ${{ inputs.prerelease }} = false ] && export TAG=${{ inputs.version }} || \
-            export TAG=${{ inputs.version }}-${{ github.run_number }}-prerelease
+          [ ${PRERELEASE} = false ] && export TAG=${VERSION} || \
+            export TAG=${VERSION}-${GITHUB_RUN_NUMBER}-prerelease
 
-          [ ${{ inputs.prerelease }} = false ] && export WHL_TAG=${{ inputs.version }} || \
-            export WHL_TAG=${{ inputs.version }}rc${{ github.run_number }}
+          [ ${PRERELEASE} = false ] && export WHL_TAG=${VERSION} || \
+            export WHL_TAG=${VERSION}rc${GITHUB_RUN_NUMBER}
 
           echo "tag=$TAG" >> $GITHUB_OUTPUT
           echo "whl_tag=$WHL_TAG" >> $GITHUB_OUTPUT
@@ -128,12 +132,12 @@ jobs:
           echo "# cxone-repo-tools ${{ needs.tag-repo.outputs.tag }}" > release.md
 
           echo "" >> release.md
-          python3 .github/workflows/scripts/json2md.py release_notes.json ${{ inputs.version }} >> release.md
+          python3 .github/workflows/scripts/json2md.py release_notes.json ${VERSION} >> release.md
           echo "" >> release.md
 
           WHEEL_NAME=$(basename $(ls *.whl))
           WHEEL_HASH=$(pip3 hash $WHEEL_NAME | grep "^--")
-          RELEASE_URL="https://github.com/${{ github.repository }}/releases/download/${{ needs.tag-repo.outputs.tag }}/$WHEEL_NAME"
+          RELEASE_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${{ needs.tag-repo.outputs.tag }}/$WHEEL_NAME"
 
           echo '```' >> release.md
           echo $RELEASE_URL >> release.md

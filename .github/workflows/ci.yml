@@ -62,7 +62,7 @@ jobs:
       - name: Execute Unit Tests
         run: |
           . .env
-          python -m unittest discover -v -p test_*.py -s ${{ github.workspace }}/tests
+          python -m unittest discover -v -p test_*.py -s ${GITHUB_WORKSPACE}/tests
 
   check-format:
     runs-on: cx-private-ubuntu-x64

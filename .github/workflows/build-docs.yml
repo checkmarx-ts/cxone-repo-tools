@@ -21,6 +21,8 @@ jobs:
     env:
       SKILLROOT: ai/skills/cxone-repo-tools
       PYPI_URL: https://:${{ secrets.ECHO_LIBRARIES_ACCESS_KEY }}@pypi.echohq.com/simple
+      TAG: ${{ inputs.tag }}
+      WHL_TAG: ${{ inputs.whl_tag }}
     steps:
 
       - name: Fetch Code
@@ -45,13 +47,13 @@ jobs:
         run: |
           export INSTALLMD="$SKILLROOT/references/install.md"
 
-          echo "Version: ${{ inputs.tag }}" > $INSTALLMD
-          echo "Github Repository: https://github.com/${{ github.repository }}" >> $INSTALLMD
+          echo "Version: ${TAG}" > $INSTALLMD
+          echo "Github Repository: https://github.com/${GITHUB_REPOSITORY}" >> $INSTALLMD
           echo "" >> $INSTALLMD
           echo "# Pip Installation Commands" >> $INSTALLMD
           echo "" >> $INSTALLMD
           echo "## CLI Package" >> $INSTALLMD
-          echo "pip install https://github.com/${{ github.repository }}/releases/download/${{ inputs.tag }}/cxone_repo_tools-${{ inputs.whl_tag }}-py3-none-any.whl" >> $INSTALLMD
+          echo "pip install https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/cxone_repo_tools-${WHL_TAG}-py3-none-any.whl" >> $INSTALLMD
           echo "" >> $INSTALLMD
 
       - name: Add README.md as a reference

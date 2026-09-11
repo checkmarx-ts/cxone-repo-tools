@@ -20,6 +20,7 @@ jobs:
     runs-on: cx-private-ubuntu-x64
     env:
       PYPI_URL: https://:${{ secrets.ECHO_LIBRARIES_ACCESS_KEY }}@pypi.echohq.com/simple
+      WHL_TAG: ${{ inputs.whl_tag }}
     steps:
       - name: Fetch Code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
@@ -33,7 +34,7 @@ jobs:
       - name: Update version
         if: ${{ ! inputs.buildonly }}
         run: |
-          echo "__version__='${{ inputs.whl_tag }}'" > src/cxone_repo_tools/__version__.py
+          echo "__version__='${WHL_TAG}'" > src/cxone_repo_tools/__version__.py
 
       - name: Build package
         run: |
