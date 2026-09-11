@@ -24,9 +24,12 @@ jobs:
       statuses: write
     env:
       VIRTUALENV_NO_PERIODIC_UPDATE: 1
+      PYPI_URL: https://:${{ secrets.ECHO_LIBRARIES_ACCESS_KEY }}@pypi.echohq.com/simple
     steps:
       - name: Fetch Code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          persist-credentials: false
 
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
         with:
@@ -34,7 +37,7 @@ jobs:
 
       - name: Setup Python Build Env
         run: |
-          pip config set global.index-url https://:${{ secrets.ECHO_LIBRARIES_ACCESS_KEY }}@pypi.echohq.com/simple
+          pip config set global.index-url ${{ env.PYPI_URL }}
           pip install virtualenv
 
       - name: Scan with CxOne++ Action
