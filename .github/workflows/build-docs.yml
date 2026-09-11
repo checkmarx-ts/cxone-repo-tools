@@ -20,6 +20,7 @@ jobs:
     runs-on: cx-private-ubuntu-x64
     env:
       SKILLROOT: ai/skills/cxone-repo-tools
+      PYPI_URL: https://:${{ secrets.ECHO_LIBRARIES_ACCESS_KEY }}@pypi.echohq.com/simple
     steps:
 
       - name: Fetch Code
@@ -33,7 +34,7 @@ jobs:
 
       - name: Configure Pip index
         run: |
-          pip config set global.index-url https://:${{ secrets.ECHO_LIBRARIES_ACCESS_KEY }}@pypi.echohq.com/simple
+          pip config set global.index-url ${{ env.PYPI_URL }}
 
       - name: Build Markdown Docs
         run: |

@@ -18,6 +18,8 @@ permissions:
 jobs:
   build-whl:
     runs-on: cx-private-ubuntu-x64
+    env:
+      PYPI_URL: https://:${{ secrets.ECHO_LIBRARIES_ACCESS_KEY }}@pypi.echohq.com/simple
     steps:
       - name: Fetch Code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
@@ -36,7 +38,7 @@ jobs:
       - name: Build package
         run: |
           . .env
-          pip config set global.index-url https://:${{ secrets.ECHO_LIBRARIES_ACCESS_KEY }}@pypi.echohq.com/simple
+          pip config set global.index-url ${{ env.PYPI_URL }}
           pip install build
           python -m build
 
