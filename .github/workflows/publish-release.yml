@@ -26,8 +26,7 @@ jobs:
       tag: ${{ steps.tag-string.outputs.tag }}
       whl_tag: ${{ steps.tag-string.outputs.whl_tag }}
     permissions:
-      # Need to commit a tag indicating the version
-      contents: write
+      contents: write # Need to commit a tag indicating the version
     steps:
       - name: Create tag
         id: tag-string
@@ -109,8 +108,7 @@ jobs:
   publish-release:
     runs-on: cx-private-ubuntu-x64
     permissions:
-      # Can't publish a release unless this can write.
-      contents: write
+      contents: write # Can't publish a release unless this can write.
     needs: 
       - tag-repo
       - build-wheel
