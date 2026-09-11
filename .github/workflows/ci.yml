@@ -100,13 +100,15 @@ jobs:
   build-wheel:
     name: Build the wheel
     uses: ./.github/workflows/build-whl.yml
-    secrets: inherit
+    secrets:
+      ECHO_LIBRARIES_ACCESS_KEY: ${{ secrets.ECHO_LIBRARIES_ACCESS_KEY }}
     with:
       buildonly: true
   
   build-docs:
     name: Build the docs
     uses: ./.github/workflows/build-docs.yml
-    secrets: inherit
+    secrets:
+      ECHO_LIBRARIES_ACCESS_KEY: ${{ secrets.ECHO_LIBRARIES_ACCESS_KEY }}
     with:
       buildonly: true      

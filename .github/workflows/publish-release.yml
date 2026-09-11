@@ -98,7 +98,8 @@ jobs:
     name: Build the wheel
     needs: [tag-repo]
     uses: ./.github/workflows/build-whl.yml
-    secrets: inherit
+    secrets:
+      ECHO_LIBRARIES_ACCESS_KEY: ${{ secrets.ECHO_LIBRARIES_ACCESS_KEY }}
     with:
       tag: ${{ needs.tag-repo.outputs.tag }}
       whl_tag: ${{ needs.tag-repo.outputs.whl_tag }}
@@ -107,7 +108,8 @@ jobs:
     name: Build the documentation
     needs: [tag-repo]
     uses: ./.github/workflows/build-docs.yml
-    secrets: inherit
+    secrets:
+      ECHO_LIBRARIES_ACCESS_KEY: ${{ secrets.ECHO_LIBRARIES_ACCESS_KEY }}
     with:
       tag: ${{ needs.tag-repo.outputs.tag }}
       whl_tag: ${{ needs.tag-repo.outputs.whl_tag }}

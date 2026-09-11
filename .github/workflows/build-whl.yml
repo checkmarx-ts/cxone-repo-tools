@@ -11,6 +11,10 @@ on:
       buildonly:
         type: boolean
         default: false
+    secrets:
+      ECHO_LIBRARIES_ACCESS_KEY:
+        description: Access key for the private package index
+        required: true
 
 permissions:
   contents: read
