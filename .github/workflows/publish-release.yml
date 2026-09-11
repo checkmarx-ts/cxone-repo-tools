@@ -41,9 +41,11 @@ jobs:
           echo "whl_tag=$WHL_TAG" >> $GITHUB_OUTPUT
 
       - name: Validate no tag
+        env:
+          TAG: ${{ steps.tag-string.outputs.tag }}
         run: |
           set +e
-          git clone --branch ${{ steps.tag-string.outputs.tag }} --depth=1 GITHUB_SERVER_URL/$GITHUB_REPOSITORY > /dev/null 2>&1 && exit 1
+          git clone --branch "${TAG}" --depth=1 ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY} > /dev/null 2>&1 && exit 1
           set -e
 
       - name: Fetch Code
@@ -52,9 +54,11 @@ jobs:
           persist-credentials: false
 
       - name: Set Tag
+        env:
+          TAG: ${{ steps.tag-string.outputs.tag }}
         run: |
-          git tag '${{ steps.tag-string.outputs.tag }}'
-          git push origin '${{ steps.tag-string.outputs.tag }}'
+          git tag "${TAG}"
+          git push origin "${TAG}"
 
   remove-tag-on-failure:
     needs: [tag-repo, publish-release]
