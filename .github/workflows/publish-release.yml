@@ -11,60 +11,92 @@ on:
         required: true
         type: boolean
 
+concurrency:
+  group: ${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
 
+env:
+  VERSION: ${{ inputs.version }}
+  PRERELEASE: ${{ inputs.prerelease }}
+
 jobs:
   tag-repo:
-    runs-on: cx-public-ubuntu-x64
+    name: Tag the repo with a version
+    runs-on: cx-private-ubuntu-x64
     outputs:
       tag: ${{ steps.tag-string.outputs.tag }}
       whl_tag: ${{ steps.tag-string.outputs.whl_tag }}
     permissions:
-      contents: write
+      contents: write # Need to commit a tag indicating the version
     steps:
       - name: Create tag
         id: tag-string
         run: |
-          [ ${{ inputs.prerelease }} = false ] && export TAG=${{ inputs.version }} || \
-            export TAG=${{ inputs.version }}-${{ github.run_number }}-prerelease
+          [ ${PRERELEASE} = false ] && export TAG=${VERSION} || \
+            export TAG=${VERSION}-${GITHUB_RUN_NUMBER}-prerelease
 
-          [ ${{ inputs.prerelease }} = false ] && export WHL_TAG=${{ inputs.version }} || \
-            export WHL_TAG=${{ inputs.version }}rc${{ github.run_number }}
+          [ ${PRERELEASE} = false ] && export WHL_TAG=${VERSION} || \
+            export WHL_TAG=${VERSION}rc${GITHUB_RUN_NUMBER}
 
           echo "tag=$TAG" >> $GITHUB_OUTPUT
           echo "whl_tag=$WHL_TAG" >> $GITHUB_OUTPUT
 
-      - name: Validate no tag
-        run: |
-          set +e
-          git clone --branch ${{ steps.tag-string.outputs.tag }} --depth=1 GITHUB_SERVER_URL/$GITHUB_REPOSITORY > /dev/null 2>&1 && exit 1
-          set -e
-
       - name: Fetch Code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          persist-credentials: false
+          fetch-tags: true
+
+      - name: Validate no tag
+        env:
+          TAG: ${{ steps.tag-string.outputs.tag }}
+        run: |
+          set +e
+          git checkout "${TAG}" > /dev/null 2>&1 && exit 1
+          set -e
 
       - name: Set Tag
+        env:
+          TAG: ${{ steps.tag-string.outputs.tag }}
+          TOKEN: ${{ github.token }}
         run: |
-          git tag '${{ steps.tag-string.outputs.tag }}'
-          git push origin '${{ steps.tag-string.outputs.tag }}'
+          git config --global user.email "${GITHUB_TRIGGERING_ACTOR}"
+          git config --global user.name "${GITHUB_TRIGGERING_ACTOR}"
+
+          # git remote set-url origin https://${GITHUB_TRIGGERING_ACTOR}:${TOKEN}@${GITHUB_SERVER_URL#*://}/${GITHUB_REPOSITORY}.git
+          # git config --global url.https://${GITHUB_TRIGGERING_ACTOR}:${TOKEN}@github.com/.insteadOf https://github.com/
+          
+          git remote -v
+
+          git tag "${TAG}"
+          # git -c http.extraHeader="Authorization: Bearer ${TOKEN}" push origin "${TAG}"
+          # git push origin "${TAG}"
+          git push https://${GITHUB_TRIGGERING_ACTOR}:${TOKEN}@${GITHUB_SERVER_URL#*://}/${GITHUB_REPOSITORY}.git "${TAG}"
 
   remove-tag-on-failure:
+    name: Remove tag if there is a failure
     needs: [tag-repo, publish-release]
     permissions:
-      contents: write
-    runs-on: cx-public-ubuntu-x64
+      contents: write # Need to remove the tag if there is a failure
+    runs-on: cx-private-ubuntu-x64
     if: (failure() || cancelled()) && needs.tag-repo.result == 'success'
+    env:
+      TAG: ${{ needs.tag-repo.outputs.tag }}
     steps:
       - name: Fetch Code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          persist-credentials: false
 
       - name: Remove tag
-        run: git push origin ':refs/tags/${{ needs.tag-repo.outputs.tag }}'
+        run: git push origin ":refs/tags/${TAG}"
 
   artifact-cleanup:
-    runs-on: cx-public-ubuntu-x64
+    name: Clean up generated artifacts after publish
+    runs-on: cx-private-ubuntu-x64
     needs: [publish-release]
     if: always()
     steps:
@@ -75,33 +107,42 @@ jobs:
             doc-skill-${{ github.run_number }}
 
   build-wheel:
+    name: Call
     needs: [tag-repo]
     uses: ./.github/workflows/build-whl.yml
-    secrets: inherit
+    secrets:
+      ECHO_LIBRARIES_ACCESS_KEY: ${{ secrets.ECHO_LIBRARIES_ACCESS_KEY }}
     with:
       tag: ${{ needs.tag-repo.outputs.tag }}
       whl_tag: ${{ needs.tag-repo.outputs.whl_tag }}
 
   build-docs:
+    name: Call
     needs: [tag-repo]
     uses: ./.github/workflows/build-docs.yml
-    secrets: inherit
+    secrets:
+      ECHO_LIBRARIES_ACCESS_KEY: ${{ secrets.ECHO_LIBRARIES_ACCESS_KEY }}
     with:
       tag: ${{ needs.tag-repo.outputs.tag }}
       whl_tag: ${{ needs.tag-repo.outputs.whl_tag }}
 
 
   publish-release:
-    runs-on: cx-public-ubuntu-x64
+    name: Publish the release
+    runs-on: cx-private-ubuntu-x64
     permissions:
-      contents: write
+      contents: write # Can't publish a release unless this can write.
     needs: 
       - tag-repo
       - build-wheel
       - build-docs
+    env:
+      TAG: ${{ needs.tag-repo.outputs.tag }}
     steps:
       - name: Fetch Code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          persist-credentials: false
 
       - name: Download wheel
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
@@ -119,15 +160,15 @@ jobs:
 
       - name: Make release text
         run: |
-          echo "# cxone-repo-tools ${{ needs.tag-repo.outputs.tag }}" > release.md
+          echo "# cxone-repo-tools ${TAG}" > release.md
 
           echo "" >> release.md
-          python3 .github/workflows/scripts/json2md.py release_notes.json ${{ inputs.version }} >> release.md
+          python3 .github/workflows/scripts/json2md.py release_notes.json ${VERSION} >> release.md
           echo "" >> release.md
 
           WHEEL_NAME=$(basename $(ls *.whl))
           WHEEL_HASH=$(pip3 hash $WHEEL_NAME | grep "^--")
-          RELEASE_URL="https://github.com/${{ github.repository }}/releases/download/${{ needs.tag-repo.outputs.tag }}/$WHEEL_NAME"
+          RELEASE_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/download/${TAG}/${WHEEL_NAME}"
 
           echo '```' >> release.md
           echo $RELEASE_URL >> release.md

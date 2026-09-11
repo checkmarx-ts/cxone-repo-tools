@@ -4,14 +4,22 @@ on:
   push:
   schedule:
     - cron: '0 3 * * 1'
-    
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
+
+env:
+  PYPI_URL: https://:${{ secrets.ECHO_LIBRARIES_ACCESS_KEY }}@pypi.echohq.com/simple
 
 jobs:
 
   linting:
-      runs-on: cx-public-ubuntu-x64
+      name: Run pylint and compileall on various versions
+      runs-on: cx-private-ubuntu-x64
       strategy:
         max-parallel: 3
         matrix:
@@ -21,15 +29,20 @@ jobs:
             - "3.12"
             - "3.13"
             - "3.14"
-      container: python:${{ matrix.pver }}
       steps:
         - name: Fetch Code
           uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+          with:
+            persist-credentials: false
+
+        - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+          with:
+            python-version: ${{ matrix.pver }}
 
         - name: Install Pylint
           shell: bash
           run: |
-            pip config set global.index-url https://:${{ secrets.ECHO_LIBRARIES_ACCESS_KEY }}@pypi.echohq.com/simple
+            pip config set global.index-url ${PYPI_URL}
             pip install pylint .
 
         - name: Pylint
@@ -37,11 +50,19 @@ jobs:
           run: |
             pylint --disable=all --enable=E,F --disable=E1121 --score=false src
 
+        - name: Compile
+          shell: bash
+          run: |
+            python -m compileall src tests
+
   execute-unit-tests:
-    runs-on: cx-public-ubuntu-x64
+    name: Unit Tests
+    runs-on: cx-private-ubuntu-x64
     steps:
       - name: Fetch Code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          persist-credentials: false
 
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
         with:
@@ -49,19 +70,22 @@ jobs:
 
       - name: Install packages
         run: |
-          pip config set global.index-url https://:${{ secrets.ECHO_LIBRARIES_ACCESS_KEY }}@pypi.echohq.com/simple
+          pip config set global.index-url ${PYPI_URL}
           pip install pytest .
 
       - name: Execute Unit Tests
         run: |
           . .env
-          python -m unittest discover -v -p test_*.py -s ${{ github.workspace }}/tests
+          python -m unittest discover -v -p test_*.py -s ${GITHUB_WORKSPACE}/tests
 
   check-format:
-    runs-on: cx-public-ubuntu-x64
+    name: Code format enforcement
+    runs-on: cx-private-ubuntu-x64
     steps:
       - name: Fetch Code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          persist-credentials: false
 
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
         with:
@@ -69,18 +93,22 @@ jobs:
 
       - name: Check formatting
         run: |
-          pip config set global.index-url https://:${{ secrets.ECHO_LIBRARIES_ACCESS_KEY }}@pypi.echohq.com/simple
+          pip config set global.index-url ${PYPI_URL}
           pip install black==26.5.1
           black --target-version py312 --check .
 
   build-wheel:
+    name: Call
     uses: ./.github/workflows/build-whl.yml
-    secrets: inherit
+    secrets:
+      ECHO_LIBRARIES_ACCESS_KEY: ${{ secrets.ECHO_LIBRARIES_ACCESS_KEY }}
     with:
       buildonly: true
   
   build-docs:
+    name: Call
     uses: ./.github/workflows/build-docs.yml
-    secrets: inherit
+    secrets:
+      ECHO_LIBRARIES_ACCESS_KEY: ${{ secrets.ECHO_LIBRARIES_ACCESS_KEY }}
     with:
       buildonly: true      

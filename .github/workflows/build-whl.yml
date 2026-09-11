@@ -11,16 +11,26 @@ on:
       buildonly:
         type: boolean
         default: false
+    secrets:
+      ECHO_LIBRARIES_ACCESS_KEY:
+        description: Access key for the private package index
+        required: true
 
 permissions:
   contents: read
 
 jobs:
   build-whl:
-    runs-on: cx-public-ubuntu-x64
+    name: Build Wheel
+    runs-on: cx-private-ubuntu-x64
+    env:
+      PYPI_URL: https://:${{ secrets.ECHO_LIBRARIES_ACCESS_KEY }}@pypi.echohq.com/simple
+      WHL_TAG: ${{ inputs.whl_tag }}
     steps:
       - name: Fetch Code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          persist-credentials: false
 
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
         with:
@@ -29,12 +39,12 @@ jobs:
       - name: Update version
         if: ${{ ! inputs.buildonly }}
         run: |
-          echo "__version__='${{ inputs.whl_tag }}'" > src/cxone_repo_tools/__version__.py
+          echo "__version__='${WHL_TAG}'" > src/cxone_repo_tools/__version__.py
 
       - name: Build package
         run: |
           . .env
-          pip config set global.index-url https://:${{ secrets.ECHO_LIBRARIES_ACCESS_KEY }}@pypi.echohq.com/simple
+          pip config set global.index-url ${PYPI_URL}
           pip install build
           python -m build
 
