@@ -37,8 +37,7 @@ jobs:
 
       - name: Setup Python Build Env
         run: |
-          echo URL IS NOW: ${{ env.PYPI_URL }}
-          pip config set global.index-url ${{ env.PYPI_URL }}
+          pip config set global.index-url ${PYPI_URL}
           pip install virtualenv
 
       - name: Scan with CxOne++ Action

@@ -34,7 +34,7 @@ jobs:
         - name: Install Pylint
           shell: bash
           run: |
-            pip config set global.index-url ${{ env.PYPI_URL }}
+            pip config set global.index-url ${PYPI_URL}
             pip install pylint .
 
         - name: Pylint
@@ -56,7 +56,7 @@ jobs:
 
       - name: Install packages
         run: |
-          pip config set global.index-url ${{ env.PYPI_URL }}
+          pip config set global.index-url ${PYPI_URL}
           pip install pytest .
 
       - name: Execute Unit Tests
@@ -78,7 +78,7 @@ jobs:
 
       - name: Check formatting
         run: |
-          pip config set global.index-url ${{ env.PYPI_URL }}
+          pip config set global.index-url ${PYPI_URL}
           pip install black==26.5.1
           black --target-version py312 --check .
 

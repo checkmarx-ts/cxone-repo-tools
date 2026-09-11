@@ -34,7 +34,7 @@ jobs:
 
       - name: Configure Pip index
         run: |
-          pip config set global.index-url ${{ env.PYPI_URL }}
+          pip config set global.index-url ${PYPI_URL}
 
       - name: Build Markdown Docs
         run: |
