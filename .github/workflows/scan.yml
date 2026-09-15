@@ -22,7 +22,6 @@ permissions:
 
 jobs:
   execute-scan:
-    name: Execute the scan
     runs-on: cx-public-ubuntu-x64
     permissions:
       pull-requests: write # Need to make PR decorations
