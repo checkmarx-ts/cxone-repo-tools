@@ -22,7 +22,7 @@ permissions:
 jobs:
   build-whl:
     name: Build Wheel
-    runs-on: cx-private-ubuntu-x64
+    runs-on: cx-public-ubuntu-x64
     env:
       PYPI_URL: https://:${{ secrets.ECHO_LIBRARIES_ACCESS_KEY }}@pypi.echohq.com/simple
       WHL_TAG: ${{ inputs.whl_tag }}

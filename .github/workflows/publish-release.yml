@@ -25,7 +25,7 @@ env:
 jobs:
   tag-repo:
     name: Tag the repo with a version
-    runs-on: cx-private-ubuntu-x64
+    runs-on: cx-public-ubuntu-x64
     outputs:
       tag: ${{ steps.tag-string.outputs.tag }}
       whl_tag: ${{ steps.tag-string.outputs.whl_tag }}
@@ -76,7 +76,7 @@ jobs:
     needs: [tag-repo, publish-release]
     permissions:
       contents: write # Need to remove the tag if there is a failure
-    runs-on: cx-private-ubuntu-x64
+    runs-on: cx-public-ubuntu-x64
     if: (failure() || cancelled()) && needs.tag-repo.result == 'success'
     env:
       TAG: ${{ needs.tag-repo.outputs.tag }}
@@ -91,7 +91,7 @@ jobs:
 
   artifact-cleanup:
     name: Clean up generated artifacts after publish
-    runs-on: cx-private-ubuntu-x64
+    runs-on: cx-public-ubuntu-x64
     needs: [publish-release]
     if: always()
     steps:
@@ -124,7 +124,7 @@ jobs:
 
   publish-release:
     name: Publish the release
-    runs-on: cx-private-ubuntu-x64
+    runs-on: cx-public-ubuntu-x64
     permissions:
       contents: write # Can't publish a release unless this can write.
     needs: 
