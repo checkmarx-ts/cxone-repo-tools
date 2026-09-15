@@ -16,16 +16,9 @@ At a high level, this tool does the following:
 
 To install this tool, you will need Python 3.10 or greater.
 
+
+
 ## Quickstart
-
-Once installed (see below), the command line help can be accessed with the following command:
-
-`cxone-repo-tools -h`
-
-This `README` covers the tool topics at a high level.  The command line help and the AI skill are
-the primary documentation.
-
-### AI Skill
 
 The `releases` section of this repo has a downloadable AI skill that can be used by your AI agent.  It can provide
 assistance with the following:
@@ -34,10 +27,17 @@ assistance with the following:
 * Analysis of the CSV exports to plan for tool execution.
 * Execution of the tool.
 
-### Installation
+### Manual Installation and Execution
 
 The install is typically performed by using a direct URL with an optional associated hash for verification.  The `releases` section of this repo
 has the required copy/paste lines with required hashes.
+
+Once installed (see below), the command line help can be accessed with the following command:
+
+`cxone-repo-tools -h`
+
+This `README` covers the tool topics at a high level.  The command line help and the AI skill are
+the primary documentation.
 
 ## Background
 
