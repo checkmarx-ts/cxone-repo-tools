@@ -19,7 +19,7 @@ jobs:
 
   linting:
       name: Run pylint and compileall on various versions
-      runs-on: cx-private-ubuntu-x64
+      runs-on: cx-public-ubuntu-x64
       strategy:
         max-parallel: 3
         matrix:
@@ -57,7 +57,7 @@ jobs:
 
   execute-unit-tests:
     name: Unit Tests
-    runs-on: cx-private-ubuntu-x64
+    runs-on: cx-public-ubuntu-x64
     steps:
       - name: Fetch Code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
@@ -80,7 +80,7 @@ jobs:
 
   check-format:
     name: Code format enforcement
-    runs-on: cx-private-ubuntu-x64
+    runs-on: cx-public-ubuntu-x64
     steps:
       - name: Fetch Code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd

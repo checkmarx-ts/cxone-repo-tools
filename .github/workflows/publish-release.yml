@@ -25,7 +25,7 @@ env:
 jobs:
   tag-repo:
     name: Tag the repo with a version
-    runs-on: cx-private-ubuntu-x64
+    runs-on: cx-public-ubuntu-x64
     outputs:
       tag: ${{ steps.tag-string.outputs.tag }}
       whl_tag: ${{ steps.tag-string.outputs.whl_tag }}
@@ -66,14 +66,9 @@ jobs:
           git config --global user.email "${GITHUB_TRIGGERING_ACTOR}"
           git config --global user.name "${GITHUB_TRIGGERING_ACTOR}"
 
-          # git remote set-url origin https://${GITHUB_TRIGGERING_ACTOR}:${TOKEN}@${GITHUB_SERVER_URL#*://}/${GITHUB_REPOSITORY}.git
-          # git config --global url.https://${GITHUB_TRIGGERING_ACTOR}:${TOKEN}@github.com/.insteadOf https://github.com/
-          
-          git remote -v
-
+          # This is done this way because Zizamor doesn't like to allow actions/checkout
+          # to persist credentials.
           git tag "${TAG}"
-          # git -c http.extraHeader="Authorization: Bearer ${TOKEN}" push origin "${TAG}"
-          # git push origin "${TAG}"
           git push https://${GITHUB_TRIGGERING_ACTOR}:${TOKEN}@${GITHUB_SERVER_URL#*://}/${GITHUB_REPOSITORY}.git "${TAG}"
 
   remove-tag-on-failure:
@@ -81,7 +76,7 @@ jobs:
     needs: [tag-repo, publish-release]
     permissions:
       contents: write # Need to remove the tag if there is a failure
-    runs-on: cx-private-ubuntu-x64
+    runs-on: cx-public-ubuntu-x64
     if: (failure() || cancelled()) && needs.tag-repo.result == 'success'
     env:
       TAG: ${{ needs.tag-repo.outputs.tag }}
@@ -96,7 +91,7 @@ jobs:
 
   artifact-cleanup:
     name: Clean up generated artifacts after publish
-    runs-on: cx-private-ubuntu-x64
+    runs-on: cx-public-ubuntu-x64
     needs: [publish-release]
     if: always()
     steps:
@@ -129,7 +124,7 @@ jobs:
 
   publish-release:
     name: Publish the release
-    runs-on: cx-private-ubuntu-x64
+    runs-on: cx-public-ubuntu-x64
     permissions:
       contents: write # Can't publish a release unless this can write.
     needs: 
@@ -185,7 +180,8 @@ jobs:
         id: create_release
         uses: step-security/release-action@a0d8e0f90f554c15366ca2c9046bf4090d24adbe # v1.21.0
         with:
-          allowUpdates: true
+          allowUpdates: false
+          immutableCreate: true
           artifactErrorsFailBuild: true
           artifacts: ./*.whl, ./*.zip
           bodyFile: release.md

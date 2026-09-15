@@ -22,7 +22,7 @@ permissions:
 jobs:
   build-ai-skill:
     name: Build AI Skill
-    runs-on: cx-private-ubuntu-x64
+    runs-on: cx-public-ubuntu-x64
     env:
       SKILLROOT: ai/skills/cxone-repo-tools
       PYPI_URL: https://:${{ secrets.ECHO_LIBRARIES_ACCESS_KEY }}@pypi.echohq.com/simple

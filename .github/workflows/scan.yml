@@ -22,8 +22,7 @@ permissions:
 
 jobs:
   execute-scan:
-    name: Execute the scan
-    runs-on: cx-private-ubuntu-x64
+    runs-on: cx-public-ubuntu-x64
     permissions:
       pull-requests: write # Need to make PR decorations
       statuses: write # Need to update statuses to break build
