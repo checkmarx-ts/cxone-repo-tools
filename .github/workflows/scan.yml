@@ -24,9 +24,9 @@ jobs:
   execute-scan:
     name: Execute the scan
     runs-on: cx-public-ubuntu-x64
-    permissions:
-      pull-requests: write # Need to make PR decorations
-      statuses: write # Need to update statuses to break build
+    # permissions:
+    #   pull-requests: write # Need to make PR decorations
+    #   statuses: write # Need to update statuses to break build
     env:
       VIRTUALENV_NO_PERIODIC_UPDATE: 1
       PYPI_URL: https://:${{ secrets.ECHO_LIBRARIES_ACCESS_KEY }}@pypi.echohq.com/simple
