@@ -81,6 +81,10 @@ The recovery files have the following purpose:
 * To retry projects that failed conversion if the projects need manual configuration before the
   conversion is successful.
 
+**If there is a failure, preserve the recovery files so that disconnected repositories can be reconnected
+manually if the recovery doesn't do it automatically.  Contact Checkmarx Professional Services for assistance
+if recovery is not performed automatically.**
+
 ## Other Notes
 
 * Authentication is performed using an API key.  It is suggested that the user that creates the API key has
