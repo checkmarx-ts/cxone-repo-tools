@@ -18,7 +18,7 @@ env:
 jobs:
 
   linting:
-      name: Run pylint and compileall on various versions
+      name: Check Python version compatibility
       runs-on: cx-public-ubuntu-x64
       strategy:
         max-parallel: 3
