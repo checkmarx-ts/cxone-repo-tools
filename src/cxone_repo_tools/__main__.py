@@ -261,6 +261,7 @@ async def main():
                 protected_branches=args.get("--protected-branch"),
             )
 
+        exit(0)
     except DocoptExit as bad_args:
         print("Incorrect arguments provided.", file=sys.stderr, flush=True)
         print(bad_args, file=sys.stderr, flush=True)
@@ -268,6 +269,8 @@ async def main():
         print(cex, file=sys.stderr, flush=True)
     except Exception:
         print(traceback.format_exc(), file=sys.stderr, flush=True)
+
+    exit(1)
 
 
 def cli_entry():
