@@ -32,7 +32,7 @@ assistance with the following:
 The install is typically performed by using a direct URL with an optional associated hash for verification.  The `releases` section of this repo
 has the required copy/paste lines with required hashes.
 
-Once installed (see below), the command line help can be accessed with the following command:
+Once installed, the command line help can be accessed with the following command:
 
 `cxone-repo-tools -h`
 
