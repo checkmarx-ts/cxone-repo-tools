@@ -16,8 +16,6 @@ At a high level, this tool does the following:
 
 To install this tool, you will need Python 3.10 or greater.
 
-
-
 ## Quickstart
 
 The `releases` section of this repo has a downloadable AI skill that can be used by your AI agent.  It can provide
