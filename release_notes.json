@@ -1,5 +1,9 @@
 {
 
+  
+  "1.0.1" : [
+    "Fix some docopt issues with different Python versions."
+  ],
   "1.0.0" : [
     "Initial release"
   ]

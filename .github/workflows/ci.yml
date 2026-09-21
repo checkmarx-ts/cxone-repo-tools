@@ -55,6 +55,11 @@ jobs:
           run: |
             python -m compileall src tests
 
+        - name: Check docstrings
+          shell: bash
+          run: |
+            cxone-repo-tools -h
+
   execute-unit-tests:
     name: Unit Tests
     runs-on: cx-public-ubuntu-x64
