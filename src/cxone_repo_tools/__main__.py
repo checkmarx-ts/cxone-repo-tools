@@ -33,6 +33,9 @@ def make_engine_list(args: Dict) -> List[str]:
 
 async def main():
     # fmt: off
+# placeholder    
+#                       [--max-batches MAXBATCH | --project-id PROJECTID]
+
     """Usage:
       cxone-repo-tools (-h | --help | --version)
       cxone-repo-tools (export-projects | export-scms)
@@ -46,7 +49,7 @@ async def main():
                       (--cxone-hostname FQDN | --cxone-region REGION)
                       [-k] [--proxy-url PROXY_URL]
                       [--report REPORT_FILE]
-                      [--max-batches MAXBATCH | --project-id PROJECTID]
+                      --project-id PROJECTID
                       [--ignore-url-mismatch]
                       --target-id TARGETID --source-id SOURCEIDS...
       cxone-repo-tools convert-scms
