@@ -86,41 +86,52 @@ class Converter(RecoverableConverter):
             if len(repo_base_urls) > 1:
                 raise ConversionException.scm_base_urls_different(repo_base_urls)
 
+    async def __get_single_project_generators(self, single_project: str):
+        return [
+            page_generator(
+                retrieve_list_of_projects,
+                "projects",
+                client=self._client,
+                ids=[single_project],
+            )
+        ]
+
+    async def __get_scm_project_name_generators(self, scm_id: int):
+        names = []
+        async for name in page_generator(
+            retrieve_scm_projects,
+            "projects",
+            client=self._client,
+            scmid=scm_id,
+            limit=MAX_RECORD_COUNT,
+        ):
+            names.append(name)
+
+        generators = []
+
+        while len(names) > 0:
+            generators.append(
+                page_generator(
+                    retrieve_list_of_projects,
+                    "projects",
+                    client=self._client,
+                    limit=MAX_RECORD_COUNT,
+                    names=names[:MAX_NAMES_IN_QUERY],
+                )
+            )
+
+            del names[:MAX_NAMES_IN_QUERY]
+
+        return generators
+
     async def __get_scm_project_generators(
         self, scm_id: int, *, single_project: str = None
     ) -> List[AsyncGenerator]:
         async with self._threads:
-            names = []
-            async for name in page_generator(
-                retrieve_scm_projects,
-                "projects",
-                client=self._client,
-                scmid=scm_id,
-                limit=MAX_RECORD_COUNT,
-            ):
-                names.append(name)
-
-            generators = []
-
-            additional_params = {}
             if single_project is not None:
-                additional_params["ids"] = [single_project]
-
-            while len(names) > 0:
-                generators.append(
-                    page_generator(
-                        retrieve_list_of_projects,
-                        "projects",
-                        client=self._client,
-                        limit=MAX_RECORD_COUNT,
-                        names=names[:MAX_NAMES_IN_QUERY],
-                        **additional_params,
-                    )
-                )
-
-                del names[:MAX_NAMES_IN_QUERY]
-
-            return generators
+                return await self.__get_single_project_generators(single_project)
+            else:
+                return await self.__get_scm_project_name_generators(scm_id)
 
     async def __get_conversion_batches(
         self,
