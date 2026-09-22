@@ -38,47 +38,46 @@ def make_engine_list(args: Dict) -> List[str]:
     return engines
 
 
-def __batch_coro_factory(args : ParsedOptions, client : CxOneClient, threads : int) -> Coroutine:
-  if args["--recovery-only"]:
-      return RecoverableConverter(
-          client, args["--report"], threads=threads
-      ).convert()
-  else:
-      max_batches = args.get("--max-batches")
-      if max_batches is None:
-          max_batches = 0
+def __batch_coro_factory(
+    args: ParsedOptions, client: CxOneClient, threads: int
+) -> Coroutine:
+    if args["--recovery-only"]:
+        return RecoverableConverter(client, args["--report"], threads=threads).convert()
+    else:
+        max_batches = args.get("--max-batches")
+        if max_batches is None:
+            max_batches = 0
 
-      convert_args = [
-          client,
-          args["--source-id"],
-          args["--target-id"],
-          args["--report"],
-          threads,
-      ]
+        convert_args = [
+            client,
+            args["--source-id"],
+            args["--target-id"],
+            args["--report"],
+            threads,
+        ]
 
-      regex_ignore_case = args['--regex-ignore-case']
-      regex = None
+        regex_ignore_case = args["--regex-ignore-case"]
+        regex = None
 
-      converter_inst = BatchConverter
+        converter_inst = BatchConverter
 
-      if args.get("--project-name-match") is not None:
-          regex = args.get("--project-name-match")
-          converter_inst = NameFilterConverter
-      elif args.get("--project-group-match") is not None:
-          regex = args.get("--project-group-match")
-          converter_inst = GroupFilterConverter
+        if args.get("--project-name-match") is not None:
+            regex = args.get("--project-name-match")
+            converter_inst = NameFilterConverter
+        elif args.get("--project-group-match") is not None:
+            regex = args.get("--project-group-match")
+            converter_inst = GroupFilterConverter
 
-      if regex is not None:
-          convert_args = [regex, regex_ignore_case] + convert_args
+        if regex is not None:
+            convert_args = [regex, regex_ignore_case] + convert_args
 
+        return converter_inst(*convert_args).convert(
+            max_batches=int(max_batches),
+            project_id=args.get("--project-id"),
+            override_url_mismatch=args["--ignore-url-mismatch"],
+            skip_recovery=args["--skip-recovery"],
+        )
 
-      return converter_inst(*convert_args).convert(
-          max_batches=int(max_batches),
-          project_id=args.get("--project-id"),
-          override_url_mismatch=args["--ignore-url-mismatch"],
-          skip_recovery=args["--skip-recovery"],
-      )
-    
 
 async def main():
     # fmt: off
