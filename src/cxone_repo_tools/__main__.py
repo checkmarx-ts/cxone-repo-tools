@@ -33,53 +33,50 @@ def make_engine_list(args: Dict) -> List[str]:
 
 async def main():
     # fmt: off
-# placeholder    
-#                       [--max-batches MAXBATCH | --project-id PROJECTID]
-
     """Usage:
-      cxone-repo-tools (-h | --help | --version)
-      cxone-repo-tools (export-projects | export-scms)
-                      --tenant TENANT [--threads THREADS]
-                      (--api-key APIKEY | --api-key-env)
-                      (--cxone-hostname FQDN | --cxone-region REGION)
-                      [-k] [--proxy-url PROXY_URL] [--out EXPORT_FILE]
-      cxone-repo-tools convert-scms
-                      --tenant TENANT [--threads THREADS]
-                      (--api-key APIKEY | --api-key-env)
-                      (--cxone-hostname FQDN | --cxone-region REGION)
-                      [-k] [--proxy-url PROXY_URL]
-                      [--report REPORT_FILE]
-                      --project-id PROJECTID
-                      [--ignore-url-mismatch]
-                      --target-id TARGETID --source-id SOURCEIDS...
-      cxone-repo-tools convert-scms
-                      --tenant TENANT [--threads THREADS]
-                      (--api-key APIKEY | --api-key-env)
-                      (--cxone-hostname FQDN | --cxone-region REGION)
-                      [-k] [--proxy-url PROXY_URL]
-                      [--report REPORT_FILE]
-                      --recovery-only
-      cxone-repo-tools disconnect-scm
-                      --tenant TENANT [--threads THREADS]
-                      (--api-key APIKEY | --api-key-env)
-                      (--cxone-hostname FQDN | --cxone-region REGION)
-                      [-k] [--proxy-url PROXY_URL]
-                      (--scm-id SCMID | --project-id PROJECTID)
-      cxone-repo-tools connect-scm
-                      --tenant TENANT
-                      (--api-key APIKEY | --api-key-env)
-                      (--cxone-hostname FQDN | --cxone-region REGION)
-                      [-k] [--proxy-url PROXY_URL]
-                      --scm-id SCMID --project-id PROJECTID
-                      --scm-org ORG
-                      [--repo-name REPONAME]
-                      [--protected-branch BRANCH...]
-                      [--sca][--kics][--2ms][--apisec]
-                      [--sast][--sast-incremental][--ossf]
-                      [--container][--aisc]
-                      [--auto-sca-pr]
-                      [--pr-decorations]
-                      [--webhook]
+        cxone-repo-tools (-h | --help | --version)
+        cxone-repo-tools (export-projects | export-scms)
+                        --tenant TENANT [--threads THREADS]
+                        (--api-key APIKEY | --api-key-env)
+                        (--cxone-hostname FQDN | --cxone-region REGION)
+                        [-k] [--proxy-url PROXY_URL] [--out EXPORT_FILE]
+        cxone-repo-tools convert-scms
+                        --tenant TENANT [--threads THREADS]
+                        (--api-key APIKEY | --api-key-env)
+                        (--cxone-hostname FQDN | --cxone-region REGION)
+                        [-k] [--proxy-url PROXY_URL]
+                        [--report REPORT_FILE]
+                        [--max-batches MAXBATCH | --project-id PROJECTID]
+                        [--ignore-url-mismatch] [--skip-revcovery]
+                        --target-id TARGETID --source-id SOURCEIDS...
+        cxone-repo-tools convert-scms
+                        --tenant TENANT [--threads THREADS]
+                        (--api-key APIKEY | --api-key-env)
+                        (--cxone-hostname FQDN | --cxone-region REGION)
+                        [-k] [--proxy-url PROXY_URL]
+                        [--report REPORT_FILE]
+                        --recovery-only
+        cxone-repo-tools disconnect-scm
+                        --tenant TENANT [--threads THREADS]
+                        (--api-key APIKEY | --api-key-env)
+                        (--cxone-hostname FQDN | --cxone-region REGION)
+                        [-k] [--proxy-url PROXY_URL]
+                        (--scm-id SCMID | --project-id PROJECTID)
+        cxone-repo-tools connect-scm
+                        --tenant TENANT
+                        (--api-key APIKEY | --api-key-env)
+                        (--cxone-hostname FQDN | --cxone-region REGION)
+                        [-k] [--proxy-url PROXY_URL]
+                        --scm-id SCMID --project-id PROJECTID
+                        --scm-org ORG
+                        [--repo-name REPONAME]
+                        [--protected-branch BRANCH...]
+                        [--sca][--kics][--2ms][--apisec]
+                        [--sast][--sast-incremental][--ossf]
+                        [--container][--aisc]
+                        [--auto-sca-pr]
+                        [--pr-decorations]
+                        [--webhook]
 
     ## Common Options
 
@@ -138,6 +135,9 @@ async def main():
                                   from a previous, interrupted run, then exit.
 
     --ignore-url-mismatch         Ignore mismatches of repository base URLs.
+
+    --skip-recovery               Don't perform recovery this run if recovery
+                                  files are found.
 
     ### Common Convert Parameters
 
@@ -237,6 +237,7 @@ async def main():
                     max_batches=int(max_batches),
                     project_id=args.get("--project-id"),
                     override_url_mismatch=args["--ignore-url-mismatch"],
+                    skip_recovery=args["--skip-recovery"],
                 )
         elif args["disconnect-scm"]:
             operator = None

@@ -186,10 +186,11 @@ class Converter(RecoverableConverter):
         max_batches: int = 0,
         project_id: str = None,
         override_url_mismatch: bool = False,
+        skip_recovery: bool = False,
     ):
-
         # Delegate recovery of any in-progress conversions to the base class.
-        await super().convert()
+        if not skip_recovery:
+            await super().convert()
 
         await self.__validate_conversion(override_url_mismatch)
         await self.__convert_projects(max_batches=max_batches, project_id=project_id)
