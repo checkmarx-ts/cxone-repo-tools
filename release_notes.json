@@ -1,6 +1,8 @@
 {
   "1.1.0" : [
-    "Project export now shows group assignments for each project, if any."
+    "Project export now shows group assignments for each project, if any.",
+    "SCM conversion can now filter projects by regular expression name match.",
+    "SCM conversion can now filter projects by regular expression group name match."
   ],
   "1.0.1" : [
     "Fix some docopt issues with different Python versions.",
