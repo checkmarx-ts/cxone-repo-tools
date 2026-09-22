@@ -47,7 +47,7 @@ async def main():
                         [-k] [--proxy-url PROXY_URL]
                         [--report REPORT_FILE]
                         [--max-batches MAXBATCH | --project-id PROJECTID]
-                        [--ignore-url-mismatch] [--skip-revcovery]
+                        [--ignore-url-mismatch] [--skip-recovery]
                         --target-id TARGETID --source-id SOURCEIDS...
         cxone-repo-tools convert-scms
                         --tenant TENANT [--threads THREADS]
