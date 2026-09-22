@@ -14,7 +14,6 @@ from ..consts import MAX_RECORD_COUNT, DISCO_API_FLAG, MAX_NAMES_IN_QUERY
 from .batch import ConversionBatch
 from .recoverable_converter import RecoverableConverter
 
-
 class BatchConverter(RecoverableConverter):
 
     __BATCH_SIZE = 15
@@ -133,6 +132,9 @@ class BatchConverter(RecoverableConverter):
             else:
                 return await self.__get_scm_project_name_generators(scm_id)
 
+    async def _include_in_batch(self, repo_cfg : ProjectRepoConfig) -> bool:
+        return True
+
     async def __get_conversion_batches(
         self,
         project_data_gen: AsyncGenerator,
@@ -147,20 +149,21 @@ class BatchConverter(RecoverableConverter):
                     self._client, project_data
                 )
 
-                repo_org = await repo_cfg.scm_org
+                if await self._include_in_batch(repo_cfg):
+                  repo_org = await repo_cfg.scm_org
 
-                if cur_batches_by_org.get(repo_org) is None or (
-                    cur_batches_by_org.get(repo_org) is not None
-                    and cur_batches_by_org[repo_org].size >= BatchConverter.__BATCH_SIZE
-                ):
-                    cur_batches_by_org[repo_org] = ConversionBatch(
-                        repo_org,
-                        self.__scm_data[int(self.__target_id)].get("type"),
-                        self.__scm_data[int(self.__target_id)].get("repoBaseUrl"),
-                    )
-                    batches.append(cur_batches_by_org[repo_org])
+                  if cur_batches_by_org.get(repo_org) is None or (
+                      cur_batches_by_org.get(repo_org) is not None
+                      and cur_batches_by_org[repo_org].size >= BatchConverter.__BATCH_SIZE
+                  ):
+                      cur_batches_by_org[repo_org] = ConversionBatch(
+                          repo_org,
+                          self.__scm_data[int(self.__target_id)].get("type"),
+                          self.__scm_data[int(self.__target_id)].get("repoBaseUrl"),
+                      )
+                      batches.append(cur_batches_by_org[repo_org])
 
-                await cur_batches_by_org[repo_org].add(repo_cfg)
+                  await cur_batches_by_org[repo_org].add(repo_cfg)
 
         return batches
 
