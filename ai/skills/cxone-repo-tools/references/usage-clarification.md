@@ -20,3 +20,14 @@
       as part of the recovery attempt.
 * Recovery files are not removed until all projects in the recovery files have been successfully
   converted.
+
+## Connections
+
+* The number of API calls to Checkmarx One is higher than normal due to the amount
+  of data points needed to perform a batch conversion.
+* The `--retries` option is set to a high value to avoid missing data
+  when the Checkmarx One API responses are delayed due to a higher than normal
+  number of requests.
+* In addition to delays, the Checkmarx One infrastructure may scale to handle the
+  higher volume of requests.  This may cause a temporary series of 5XX responses.
+  

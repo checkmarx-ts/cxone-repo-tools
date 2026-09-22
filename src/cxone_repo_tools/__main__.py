@@ -39,11 +39,13 @@ async def main():
                         --tenant TENANT [--threads THREADS]
                         (--api-key APIKEY | --api-key-env)
                         (--cxone-hostname FQDN | --cxone-region REGION)
+                        [--retries RETRIES]
                         [-k] [--proxy-url PROXY_URL] [--out EXPORT_FILE]
         cxone-repo-tools convert-scms
                         --tenant TENANT [--threads THREADS]
                         (--api-key APIKEY | --api-key-env)
                         (--cxone-hostname FQDN | --cxone-region REGION)
+                        [--retries RETRIES]
                         [-k] [--proxy-url PROXY_URL]
                         [--report REPORT_FILE]
                         [--max-batches MAXBATCH | --project-id PROJECTID]
@@ -53,6 +55,7 @@ async def main():
                         --tenant TENANT [--threads THREADS]
                         (--api-key APIKEY | --api-key-env)
                         (--cxone-hostname FQDN | --cxone-region REGION)
+                        [--retries RETRIES]
                         [-k] [--proxy-url PROXY_URL]
                         [--report REPORT_FILE]
                         --recovery-only
@@ -60,12 +63,14 @@ async def main():
                         --tenant TENANT [--threads THREADS]
                         (--api-key APIKEY | --api-key-env)
                         (--cxone-hostname FQDN | --cxone-region REGION)
+                        [--retries RETRIES]
                         [-k] [--proxy-url PROXY_URL]
                         (--scm-id SCMID | --project-id PROJECTID)
         cxone-repo-tools connect-scm
                         --tenant TENANT
                         (--api-key APIKEY | --api-key-env)
                         (--cxone-hostname FQDN | --cxone-region REGION)
+                        [--retries RETRIES]
                         [-k] [--proxy-url PROXY_URL]
                         --scm-id SCMID --project-id PROJECTID
                         --scm-org ORG
@@ -93,6 +98,8 @@ async def main():
                                   (name only, not the https:// protocol prefix)
 
     --cxone-region REGION         The multi-tenant region: {MTREGION}
+
+    --retries RETRIES             The number of retries to attempt with API failures. [default: 255]
 
     -k                            Turn off SSL verification
 
@@ -208,6 +215,7 @@ async def main():
             args["--tenant"],
             args["--proxy-url"],
             not bool(args["-k"]),
+            int(args["--retries"]),
         )
 
         threads = int(args["--threads"])
