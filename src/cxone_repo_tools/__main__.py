@@ -1,11 +1,18 @@
 import asyncio, sys, traceback, urllib3
-from docopt import docopt, DocoptExit
-from typing import Dict, List
+from docopt import docopt, DocoptExit, ParsedOptions
+from typing import Dict, List, Coroutine
 from . import AGENT
 from .client import mt_endpoints, client_factory
 from .export import ProjectAssignmentExport, ScmExport
-from .convert import ConversionException, BatchConverter, RecoverableConverter
+from .convert import (
+    ConversionException,
+    BatchConverter,
+    RecoverableConverter,
+    NameFilterConverter,
+    GroupFilterConverter,
+)
 from .connection import Disconnector, Connector
+from cxone_api import CxOneClient
 
 
 def make_engine_list(args: Dict) -> List[str]:
@@ -31,6 +38,48 @@ def make_engine_list(args: Dict) -> List[str]:
     return engines
 
 
+def __batch_coro_factory(args : ParsedOptions, client : CxOneClient, threads : int) -> Coroutine:
+  if args["--recovery-only"]:
+      return RecoverableConverter(
+          client, args["--report"], threads=threads
+      ).convert()
+  else:
+      max_batches = args.get("--max-batches")
+      if max_batches is None:
+          max_batches = 0
+
+      convert_args = [
+          client,
+          args["--source-id"],
+          args["--target-id"],
+          args["--report"],
+          threads,
+      ]
+
+      regex_ignore_case = args['--regex-ignore-case']
+      regex = None
+
+      converter_inst = BatchConverter
+
+      if args.get("--project-name-match") is not None:
+          regex = args.get("--project-name-match")
+          converter_inst = NameFilterConverter
+      elif args.get("--project-group-match") is not None:
+          regex = args.get("--project-group-match")
+          converter_inst = GroupFilterConverter
+
+      if regex is not None:
+          convert_args = [regex, regex_ignore_case] + convert_args
+
+
+      return converter_inst(*convert_args).convert(
+          max_batches=int(max_batches),
+          project_id=args.get("--project-id"),
+          override_url_mismatch=args["--ignore-url-mismatch"],
+          skip_recovery=args["--skip-recovery"],
+      )
+    
+
 async def main():
     # fmt: off
     """Usage:
@@ -48,8 +97,10 @@ async def main():
                         [--retries RETRIES]
                         [-k] [--proxy-url PROXY_URL]
                         [--report REPORT_FILE]
-                        [--max-batches MAXBATCH | --project-id PROJECTID]
+                        [--max-batches MAXBATCH]
                         [--ignore-url-mismatch] [--skip-recovery]
+                        [--project-id PROJECTID | --project-name-match REGEX | --project-group-match REGEX]
+                        [--regex-ignore-case]
                         --target-id TARGETID --source-id SOURCEIDS...
         cxone-repo-tools convert-scms
                         --tenant TENANT [--threads THREADS]
@@ -146,6 +197,14 @@ async def main():
     --skip-recovery               Don't perform recovery this run if recovery
                                   files are found.
 
+    --project-name-match REGEX    Converts projects with names matching the provided
+                                  regular expression.
+    
+    --project-group-match REGEX   Converts projects assigned to at least one group
+                                  whose name matches the provided regular expression.
+
+    --regex-ignore-case           Use case-insensitive regular expression matching.
+
     ### Common Convert Parameters
 
     --target-id TARGETID          Target SCM ID
@@ -225,28 +284,7 @@ async def main():
         elif args["export-scms"]:
             await ScmExport(client, threads=threads).export(args["--out"])
         elif args["convert-scms"]:
-
-            if args["--recovery-only"]:
-                await RecoverableConverter(
-                    client, args["--report"], threads=threads
-                ).convert()
-            else:
-                max_batches = args.get("--max-batches")
-                if max_batches is None:
-                    max_batches = 0
-
-                await BatchConverter(
-                    client,
-                    args["--source-id"],
-                    args["--target-id"],
-                    args["--report"],
-                    threads=threads,
-                ).convert(
-                    max_batches=int(max_batches),
-                    project_id=args.get("--project-id"),
-                    override_url_mismatch=args["--ignore-url-mismatch"],
-                    skip_recovery=args["--skip-recovery"],
-                )
+            await __batch_coro_factory(args, client, threads)
         elif args["disconnect-scm"]:
             operator = None
             if args.get("--scm-id") is not None:

@@ -1,3 +1,5 @@
 from .batch_converter import BatchConverter
+from .name_filter_converter import NameFilterConverter
+from .group_filter_converter import GroupFilterConverter
 from .recoverable_converter import RecoverableConverter
 from .exceptions import ConversionException
