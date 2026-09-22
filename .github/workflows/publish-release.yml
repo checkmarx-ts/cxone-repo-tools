@@ -166,12 +166,15 @@ jobs:
           RELEASE_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/download/${TAG}/${WHEEL_NAME}"
 
           echo "Execute to install:"  >> release.md
+          echo "" >> release.md
           echo '```'
           echo pip install $RELEASE_URL >> release.md
           echo '```' >> release.md
 
+          echo "" >> release.md
           echo "## Hashes" >> release.md
           echo "### $WHEEL_NAME" >> release.md
+          echo "" >> release.md
           echo '```' >> release.md
           echo "$WHEEL_HASH" >> release.md
           echo '```' >> release.md
