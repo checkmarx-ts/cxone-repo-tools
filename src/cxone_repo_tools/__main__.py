@@ -4,7 +4,7 @@ from typing import Dict, List
 from . import AGENT
 from .client import mt_endpoints, client_factory
 from .export import ProjectAssignmentExport, ScmExport
-from .convert import ConversionException, Converter, RecoverableConverter
+from .convert import ConversionException, BatchConverter, RecoverableConverter
 from .connection import Disconnector, Connector
 
 
@@ -235,7 +235,7 @@ async def main():
                 if max_batches is None:
                     max_batches = 0
 
-                await Converter(
+                await BatchConverter(
                     client,
                     args["--source-id"],
                     args["--target-id"],

@@ -15,7 +15,7 @@ from .batch import ConversionBatch
 from .recoverable_converter import RecoverableConverter
 
 
-class Converter(RecoverableConverter):
+class BatchConverter(RecoverableConverter):
 
     __BATCH_SIZE = 15
 
@@ -72,7 +72,7 @@ class Converter(RecoverableConverter):
             raise ConversionException.source_scms_not_found(missing_sources)
 
         for source_id in source_map.keys():
-            if source_map[source_id] not in Converter.__COMPATIBLE_MAP.get(
+            if source_map[source_id] not in BatchConverter.__COMPATIBLE_MAP.get(
                 target_type, []
             ):
                 raise ConversionException.incompatible(
@@ -151,7 +151,7 @@ class Converter(RecoverableConverter):
 
                 if cur_batches_by_org.get(repo_org) is None or (
                     cur_batches_by_org.get(repo_org) is not None
-                    and cur_batches_by_org[repo_org].size >= Converter.__BATCH_SIZE
+                    and cur_batches_by_org[repo_org].size >= BatchConverter.__BATCH_SIZE
                 ):
                     cur_batches_by_org[repo_org] = ConversionBatch(
                         repo_org,
