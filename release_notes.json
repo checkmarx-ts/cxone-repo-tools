@@ -1,4 +1,7 @@
 {
+  "1.1.0" : [
+    "Project export now shows group assignments for each project, if any."
+  ],
   "1.0.1" : [
     "Fix some docopt issues with different Python versions.",
     "Batch conversions temporarily disabled."

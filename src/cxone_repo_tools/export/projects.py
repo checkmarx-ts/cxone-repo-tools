@@ -5,6 +5,7 @@ from cxone_api.util import page_generator
 from cxone_api.low.code_repository_management import retrieve_scm_projects
 from cxone_api.low.projects import retrieve_list_of_projects
 from cxone_api.high.projects import ProjectRepoConfig
+from cxone_api.high.access_mgmt.user_mgmt import Groups
 from .scms import ScmExport
 from ..consts import MAX_RECORD_COUNT, MAX_NAMES_IN_QUERY
 
@@ -16,6 +17,7 @@ class ProjectAssignmentExport(ScmExport):
         self.__project_data_generator_by_scm_index = {}
         self.__scm_project_name_index = {}
         self.__scm_project_name_index_lock = asyncio.Lock()
+        self.__groups = Groups(self._client)
 
     @property
     def _field_names(self) -> List[str]:
@@ -31,6 +33,7 @@ class ProjectAssignmentExport(ScmExport):
             "project_protected_branches",
             "project_scm_org",
             "project_scanners",
+            "project_groups",
         ]
 
     async def __index_projects_assigned_to_scm(self, scm_id: int):
@@ -88,6 +91,15 @@ class ProjectAssignmentExport(ScmExport):
 
     async def _generate_row(self, scm_id: int, repo_cfg: ProjectRepoConfig) -> Dict:
         row = await super()._generate_row(await self._get_scm_data(scm_id))
+        groups = ""
+        if repo_cfg.groups is not None and len(repo_cfg.groups) > 0:
+            group_list = []
+            for gid in repo_cfg.groups:
+                desc = await self.__groups.get_by_id(gid)
+                group_list.append(str(desc.path))
+
+            groups = "|".join(group_list)
+
         row.update(
             {
                 "project_id": repo_cfg.id,
@@ -105,6 +117,7 @@ class ProjectAssignmentExport(ScmExport):
                 "project_scanners": await repo_cfg.get_enabled_scanners(
                     await repo_cfg.primary_branch
                 ),
+                "project_groups": groups,
             }
         )
 
