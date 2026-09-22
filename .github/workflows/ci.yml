@@ -18,7 +18,7 @@ env:
 jobs:
 
   linting:
-      name: Run pylint and compileall on various versions
+      name: Check Python version compatibility
       runs-on: cx-public-ubuntu-x64
       strategy:
         max-parallel: 3
@@ -54,6 +54,11 @@ jobs:
           shell: bash
           run: |
             python -m compileall src tests
+
+        - name: Check docstrings
+          shell: bash
+          run: |
+            cxone-repo-tools -h
 
   execute-unit-tests:
     name: Unit Tests

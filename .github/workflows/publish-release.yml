@@ -165,12 +165,16 @@ jobs:
           WHEEL_HASH=$(pip3 hash $WHEEL_NAME | grep "^--")
           RELEASE_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/download/${TAG}/${WHEEL_NAME}"
 
-          echo '```' >> release.md
-          echo $RELEASE_URL >> release.md
+          echo "Execute to install:"  >> release.md
+          echo "" >> release.md
+          echo '```'  >> release.md
+          echo pip install $RELEASE_URL >> release.md
           echo '```' >> release.md
 
+          echo "" >> release.md
           echo "## Hashes" >> release.md
           echo "### $WHEEL_NAME" >> release.md
+          echo "" >> release.md
           echo '```' >> release.md
           echo "$WHEEL_HASH" >> release.md
           echo '```' >> release.md
