@@ -167,7 +167,7 @@ jobs:
 
           echo "Execute to install:"  >> release.md
           echo "" >> release.md
-          echo '```'
+          echo '```'  >> release.md
           echo pip install $RELEASE_URL >> release.md
           echo '```' >> release.md
 
