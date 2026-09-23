@@ -7,7 +7,7 @@ class AbstractFilteringBatchConverter(BatchConverter):
 
     def __init__(self, regex: str, ignore_case: bool, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.__regex = re.compile(regex, re.IGNORECASE if ignore_case else re.NOFLAG)
+        self.__regex = re.compile(regex, re.IGNORECASE if ignore_case else 0)
 
     def matches(self, string: str) -> bool:
         return self.__regex.search(string)
