@@ -182,8 +182,8 @@ async def main():
 
     --report REPORT_FILE          Path to conversion report CSV. [default: ./report.csv]
 
-    --source-id SOURCEIDS...      Source SCM IDs to convert to using the target SCM. Repeat
-                                  for multiple source SCMs.
+    --source-id SOURCEIDS...      Source SCM IDs of projects to convert to using the
+                                  target SCM. Repeat for multiple source SCMs.
 
     --max-batches MAXBATCH        Maximum number of batches to convert this run. All projects
                                   will be converted in random batches if not specified.

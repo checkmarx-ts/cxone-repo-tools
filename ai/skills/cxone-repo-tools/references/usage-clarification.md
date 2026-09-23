@@ -8,7 +8,7 @@
 ## Conversion Recovery
 
 * Recovery is automatic on each execution with the `convert-scms` option and when one or more recovery
-  files is found in the current working directory.
+  files are found in the current working directory.
   * The `--recovery-only` option means that the program ends after recovery is completed.
   * The `--skip-recovery` option means that the program will not attempt to perform recovery but will
     not remove the recovery files.
