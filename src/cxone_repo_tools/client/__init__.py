@@ -21,6 +21,7 @@ def client_factory(
     tenant: str,
     proxy_url: str | None,
     ssl_verify: bool,
+    retries: int,
 ):
 
     try:
@@ -46,5 +47,11 @@ def client_factory(
         proxy = None
 
     return CxOneClient.create_with_api_key(
-        key, AGENT, auth_endpoint, api_endpoint, proxy=proxy, ssl_verify=ssl_verify
+        key,
+        AGENT,
+        auth_endpoint,
+        api_endpoint,
+        proxy=proxy,
+        ssl_verify=ssl_verify,
+        retries=retries,
     )

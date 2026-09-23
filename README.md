@@ -10,9 +10,9 @@ At a high level, this tool does the following:
 
 * Dumps a list of SCM connection definitions to a CSV.
 * Dumps a list of projects with associated SCM connections to a CSV.
-* Changes the SCM connection for one or all projects to another SCM of the same type.
-* Disconnect the SCM connection for one or all projects connected to a specific SCM.
-* Connects one project not currently associated to and SCM to an SCM.
+* Changes the SCM connection for one or more projects to another SCM of the same type.
+* Disconnects the SCM connection for one or all projects connected to a specific SCM.
+* Establishes an SCM connection for one project not currently associated to an SCM.
 
 To install this tool, you will need Python 3.10 or greater.
 
@@ -23,7 +23,7 @@ assistance with the following:
 
 * Installation of the tool.
 * Analysis of the CSV exports to plan for tool execution.
-* Execution of the tool.
+* Commands that can be copy/pasted to execute the tool.
 
 ### Manual Installation and Execution
 
@@ -51,11 +51,11 @@ from the SCM.
 
 ## Limitations
 
-* This tool currently does not work with Cloud-hosted SCMs in Checkmarx One multi-tenant tenants.  The Checkmarx One
+* This tool currently does not work with Cloud-hosted SCMs in Checkmarx One multi-tenant systems.  The Checkmarx One
   APIs do not allow conversions for Multi-tenant Cloud SCM configurations.
-* If converting projects to an SCM that uses a Github App, it is a good idea to ensure the Github App is installed for
+* If converting projects to an SCM that uses a GitHub App, it is a good idea to ensure the Github App is installed for
   all organizations containing conversion repositories.
-* If the Github App is not installed in an organization, you can execute recovery after installing the Github App
+* If the GitHub App is not installed in an organization, you can execute recovery after installing the Github App
   in the organization.  You may need to wait several minutes before starting the recovery to allow Checkmarx One
   to re-authenticate with the target organization.
 
@@ -75,7 +75,7 @@ repositories.  When all projects in a recovery file are converted, the recovery 
 The recovery files have the following purpose:
 
 * To resume the conversion of a batch of projects in the event the program stops executing before 
-  the batch of projects are completely converted.
+  a project batch is completely converted.
 * To retry projects that failed conversion if the projects need manual configuration before the
   conversion is successful.
 

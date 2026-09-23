@@ -1,5 +1,5 @@
 from typing import List
-from ..convert import Converter
+from ..convert import BatchConverter
 from cxone_api import CxOneClient
 from cxone_api.util import json_on_ok
 from cxone_api.low.repos_manager import get_scm_by_id
@@ -54,7 +54,7 @@ class Connector:
             ],
         }
 
-        await Converter.convert_project_and_wait(client, payload)
+        await BatchConverter.convert_project_and_wait(client, payload)
 
         if sast_incremental:
             repo_cfg = await ProjectRepoConfig.from_project_id(client, project_id)

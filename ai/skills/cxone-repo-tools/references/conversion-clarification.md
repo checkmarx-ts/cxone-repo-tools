@@ -1,7 +1,7 @@
 # Repository Authentication Conversions
 
-* Checkmarx One establishes a connection to a source control system (SCM)
-  when the user configures the connection via Code Repository Import.
+* Checkmarx One establishes a connection to a source code management (SCM) 
+  system when the user configures the connection via Code Repository Import.
 * The connection is referenced internally by Checkmarx One with an SCM ID (e.g.
   `scmid` or `scm_id` data element label)
 * Each SCM has a `type` that indicates the SCM type.
@@ -38,18 +38,13 @@
 * The conversion process involves the need to perform the following steps in this order:
   1. Identify the `source` SCM IDs and SCM types that will be converted.  More than one SCM
      may be a source.
-  2. Identify the single `target` SCM ID that is to be used for as the authentication method
+  2. Identify the single `target` SCM ID that is to be used as the authentication method
      for all specified `source` SCM IDs.
   3. Iterate through the Checkmarx One `projects` assigned to the specified `source` SCMs to
      disconnect the SCM that is currently used for authentication.
      * This turns the project into a `manual` project.
-  4. Import the project by via the conversion API to connect the `target` SCM as the
+  4. Import the project via the conversion API to connect the `target` SCM as the
      authentication method for the project.
-
-* The concept of "one or all projects" for conversion means:
-  * Parameters to the conversion can specify a single project id for conversion.  In this case, only one project will be converted.
-  * If a single project is not specified in the conversion parameters, all projects from `source` `SCM IDs` will be converted
-    to use the `target` `SCM ID`.
 
 ## Conversion Timing
 
@@ -65,3 +60,17 @@ to fully perform the conversion.
 * The SCM type `github` and `githubApp` are considered the same SCM `type`.
 * SCMs with differing types are currently not compatible for conversion due to the
   need to map repository URLs to different SCM organization concepts.
+
+## Filtering Selected Projects
+
+* The `--project-id` flag can be used to limit conversion to a single project.  This is not
+  the most efficient method of conversion but can be used to control conversion logic implemented
+  in custom shell scripts.
+* There are filters using regular expressions to control which projects are selected during a batch
+  conversion:
+  * The `--regex-ignore-case` parameter, if included, forces regular expression matching with case-insensitivity.
+  * The `--project-name-match` parameter takes a regular expression that is applied to find matching project
+    names.  Any project names matching the regular expression are converted.
+  * The `--project-group-match` parameter takes a regular expression that is applied to find matching
+    project group paths in groups to which a project is assigned.  If at least one assigned group's path
+    is matched, the project is converted.

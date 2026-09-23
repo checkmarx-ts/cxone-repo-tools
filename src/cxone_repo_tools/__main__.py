@@ -1,11 +1,18 @@
 import asyncio, sys, traceback, urllib3
-from docopt import docopt, DocoptExit
-from typing import Dict, List
+from docopt import docopt, DocoptExit, ParsedOptions
+from typing import Dict, List, Coroutine
 from . import AGENT
 from .client import mt_endpoints, client_factory
 from .export import ProjectAssignmentExport, ScmExport
-from .convert import ConversionException, Converter, RecoverableConverter
+from .convert import (
+    ConversionException,
+    BatchConverter,
+    RecoverableConverter,
+    NameFilterConverter,
+    GroupFilterConverter,
+)
 from .connection import Disconnector, Connector
+from cxone_api import CxOneClient
 
 
 def make_engine_list(args: Dict) -> List[str]:
@@ -31,55 +38,100 @@ def make_engine_list(args: Dict) -> List[str]:
     return engines
 
 
+def __batch_coro_factory(
+    args: ParsedOptions, client: CxOneClient, threads: int
+) -> Coroutine:
+    if args["--recovery-only"]:
+        return RecoverableConverter(client, args["--report"], threads=threads).convert()
+    else:
+        max_batches = args.get("--max-batches")
+        if max_batches is None:
+            max_batches = 0
+
+        convert_args = [
+            client,
+            args["--source-id"],
+            args["--target-id"],
+            args["--report"],
+            threads,
+        ]
+
+        regex_ignore_case = args["--regex-ignore-case"]
+        regex = None
+
+        converter_inst = BatchConverter
+
+        if args.get("--project-name-match") is not None:
+            regex = args.get("--project-name-match")
+            converter_inst = NameFilterConverter
+        elif args.get("--project-group-match") is not None:
+            regex = args.get("--project-group-match")
+            converter_inst = GroupFilterConverter
+
+        if regex is not None:
+            convert_args = [regex, regex_ignore_case] + convert_args
+
+        return converter_inst(*convert_args).convert(
+            max_batches=int(max_batches),
+            project_id=args.get("--project-id"),
+            override_url_mismatch=args["--ignore-url-mismatch"],
+            skip_recovery=args["--skip-recovery"],
+        )
+
+
 async def main():
     # fmt: off
-# placeholder    
-#                       [--max-batches MAXBATCH | --project-id PROJECTID]
-
     """Usage:
-      cxone-repo-tools (-h | --help | --version)
-      cxone-repo-tools (export-projects | export-scms)
-                      --tenant TENANT [--threads THREADS]
-                      (--api-key APIKEY | --api-key-env)
-                      (--cxone-hostname FQDN | --cxone-region REGION)
-                      [-k] [--proxy-url PROXY_URL] [--out EXPORT_FILE]
-      cxone-repo-tools convert-scms
-                      --tenant TENANT [--threads THREADS]
-                      (--api-key APIKEY | --api-key-env)
-                      (--cxone-hostname FQDN | --cxone-region REGION)
-                      [-k] [--proxy-url PROXY_URL]
-                      [--report REPORT_FILE]
-                      --project-id PROJECTID
-                      [--ignore-url-mismatch]
-                      --target-id TARGETID --source-id SOURCEIDS...
-      cxone-repo-tools convert-scms
-                      --tenant TENANT [--threads THREADS]
-                      (--api-key APIKEY | --api-key-env)
-                      (--cxone-hostname FQDN | --cxone-region REGION)
-                      [-k] [--proxy-url PROXY_URL]
-                      [--report REPORT_FILE]
-                      --recovery-only
-      cxone-repo-tools disconnect-scm
-                      --tenant TENANT [--threads THREADS]
-                      (--api-key APIKEY | --api-key-env)
-                      (--cxone-hostname FQDN | --cxone-region REGION)
-                      [-k] [--proxy-url PROXY_URL]
-                      (--scm-id SCMID | --project-id PROJECTID)
-      cxone-repo-tools connect-scm
-                      --tenant TENANT
-                      (--api-key APIKEY | --api-key-env)
-                      (--cxone-hostname FQDN | --cxone-region REGION)
-                      [-k] [--proxy-url PROXY_URL]
-                      --scm-id SCMID --project-id PROJECTID
-                      --scm-org ORG
-                      [--repo-name REPONAME]
-                      [--protected-branch BRANCH...]
-                      [--sca][--kics][--2ms][--apisec]
-                      [--sast][--sast-incremental][--ossf]
-                      [--container][--aisc]
-                      [--auto-sca-pr]
-                      [--pr-decorations]
-                      [--webhook]
+        cxone-repo-tools (-h | --help | --version)
+        cxone-repo-tools (export-projects | export-scms)
+                        --tenant TENANT [--threads THREADS]
+                        (--api-key APIKEY | --api-key-env)
+                        (--cxone-hostname FQDN | --cxone-region REGION)
+                        [--retries RETRIES]
+                        [-k] [--proxy-url PROXY_URL] [--out EXPORT_FILE]
+        cxone-repo-tools convert-scms
+                        --tenant TENANT [--threads THREADS]
+                        (--api-key APIKEY | --api-key-env)
+                        (--cxone-hostname FQDN | --cxone-region REGION)
+                        [--retries RETRIES]
+                        [-k] [--proxy-url PROXY_URL]
+                        [--report REPORT_FILE]
+                        [--max-batches MAXBATCH]
+                        [--ignore-url-mismatch] [--skip-recovery]
+                        [--project-id PROJECTID | --project-name-match REGEX | --project-group-match REGEX]
+                        [--regex-ignore-case]
+                        --target-id TARGETID --source-id SOURCEIDS...
+        cxone-repo-tools convert-scms
+                        --tenant TENANT [--threads THREADS]
+                        (--api-key APIKEY | --api-key-env)
+                        (--cxone-hostname FQDN | --cxone-region REGION)
+                        [--retries RETRIES]
+                        [-k] [--proxy-url PROXY_URL]
+                        [--report REPORT_FILE]
+                        --recovery-only
+        cxone-repo-tools disconnect-scm
+                        --tenant TENANT [--threads THREADS]
+                        (--api-key APIKEY | --api-key-env)
+                        (--cxone-hostname FQDN | --cxone-region REGION)
+                        [--retries RETRIES]
+                        [-k] [--proxy-url PROXY_URL]
+                        (--scm-id SCMID | --project-id PROJECTID)
+        cxone-repo-tools connect-scm
+                        --tenant TENANT
+                        (--api-key APIKEY | --api-key-env)
+                        (--cxone-hostname FQDN | --cxone-region REGION)
+                        [--retries RETRIES]
+                        [-k] [--proxy-url PROXY_URL]
+                        --scm-id SCMID --project-id PROJECTID
+                        --scm-org ORG
+                        [--repo-name REPONAME]
+                        [--protected-branch BRANCH...]
+                        [--sca][--kics][--2ms][--apisec]
+                        [--sast][--sast-incremental][--ossf]
+                        [--container][--aisc]
+                        [--auto-sca-pr]
+                        [--pr-decorations]
+                        [--webhook]
 
     ## Common Options
 
@@ -96,6 +148,8 @@ async def main():
                                   (name only, not the https:// protocol prefix)
 
     --cxone-region REGION         The multi-tenant region: {MTREGION}
+
+    --retries RETRIES             The number of retries to attempt with API failures. [default: 255]
 
     -k                            Turn off SSL verification
 
@@ -128,8 +182,8 @@ async def main():
 
     --report REPORT_FILE          Path to conversion report CSV. [default: ./report.csv]
 
-    --source-id SOURCEIDS...      Source SCM IDs to convert to using the target SCM. Repeat
-                                  for multiple source SCMs.
+    --source-id SOURCEIDS...      Source SCM IDs of projects to convert to using the
+                                  target SCM. Repeat for multiple source SCMs.
 
     --max-batches MAXBATCH        Maximum number of batches to convert this run. All projects
                                   will be converted in random batches if not specified.
@@ -138,6 +192,17 @@ async def main():
                                   from a previous, interrupted run, then exit.
 
     --ignore-url-mismatch         Ignore mismatches of repository base URLs.
+
+    --skip-recovery               Don't perform recovery this run if recovery
+                                  files are found.
+
+    --project-name-match REGEX    Converts projects with names matching the provided
+                                  regular expression.
+    
+    --project-group-match REGEX   Converts projects assigned to at least one group
+                                  whose path matches the provided regular expression.
+
+    --regex-ignore-case           Use case-insensitive regular expression matching.
 
     ### Common Convert Parameters
 
@@ -208,6 +273,7 @@ async def main():
             args["--tenant"],
             args["--proxy-url"],
             not bool(args["-k"]),
+            int(args["--retries"]),
         )
 
         threads = int(args["--threads"])
@@ -217,27 +283,7 @@ async def main():
         elif args["export-scms"]:
             await ScmExport(client, threads=threads).export(args["--out"])
         elif args["convert-scms"]:
-
-            if args["--recovery-only"]:
-                await RecoverableConverter(
-                    client, args["--report"], threads=threads
-                ).convert()
-            else:
-                max_batches = args.get("--max-batches")
-                if max_batches is None:
-                    max_batches = 0
-
-                await Converter(
-                    client,
-                    args["--source-id"],
-                    args["--target-id"],
-                    args["--report"],
-                    threads=threads,
-                ).convert(
-                    max_batches=int(max_batches),
-                    project_id=args.get("--project-id"),
-                    override_url_mismatch=args["--ignore-url-mismatch"],
-                )
+            await __batch_coro_factory(args, client, threads)
         elif args["disconnect-scm"]:
             operator = None
             if args.get("--scm-id") is not None:

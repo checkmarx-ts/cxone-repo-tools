@@ -51,7 +51,7 @@ are `true`:
 * `project_pr_decoration_enabled`
 * `project_sca_autopr_enabled`
 
-When any of the preceeding fields are `false` for more than 10% of all projects provided
+When any of the preceding fields are `false` for more than 10% of all projects provided
 in the input data, the user should be warned of a possible misconfiguration for that
 field exceeding the threshold.
 

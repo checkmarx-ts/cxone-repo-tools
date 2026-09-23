@@ -15,7 +15,7 @@ from .batch import ConversionBatch
 from .recoverable_converter import RecoverableConverter
 
 
-class Converter(RecoverableConverter):
+class BatchConverter(RecoverableConverter):
 
     __BATCH_SIZE = 15
 
@@ -72,7 +72,7 @@ class Converter(RecoverableConverter):
             raise ConversionException.source_scms_not_found(missing_sources)
 
         for source_id in source_map.keys():
-            if source_map[source_id] not in Converter.__COMPATIBLE_MAP.get(
+            if source_map[source_id] not in BatchConverter.__COMPATIBLE_MAP.get(
                 target_type, []
             ):
                 raise ConversionException.incompatible(
@@ -86,41 +86,55 @@ class Converter(RecoverableConverter):
             if len(repo_base_urls) > 1:
                 raise ConversionException.scm_base_urls_different(repo_base_urls)
 
+    async def __get_single_project_generators(self, single_project: str):
+        return [
+            page_generator(
+                retrieve_list_of_projects,
+                "projects",
+                client=self._client,
+                ids=[single_project],
+            )
+        ]
+
+    async def __get_scm_project_name_generators(self, scm_id: int):
+        names = []
+        async for name in page_generator(
+            retrieve_scm_projects,
+            "projects",
+            client=self._client,
+            scmid=scm_id,
+            limit=MAX_RECORD_COUNT,
+        ):
+            names.append(name)
+
+        generators = []
+
+        while len(names) > 0:
+            generators.append(
+                page_generator(
+                    retrieve_list_of_projects,
+                    "projects",
+                    client=self._client,
+                    limit=MAX_RECORD_COUNT,
+                    names=names[:MAX_NAMES_IN_QUERY],
+                )
+            )
+
+            del names[:MAX_NAMES_IN_QUERY]
+
+        return generators
+
     async def __get_scm_project_generators(
         self, scm_id: int, *, single_project: str = None
     ) -> List[AsyncGenerator]:
         async with self._threads:
-            names = []
-            async for name in page_generator(
-                retrieve_scm_projects,
-                "projects",
-                client=self._client,
-                scmid=scm_id,
-                limit=MAX_RECORD_COUNT,
-            ):
-                names.append(name)
-
-            generators = []
-
-            additional_params = {}
             if single_project is not None:
-                additional_params["ids"] = [single_project]
+                return await self.__get_single_project_generators(single_project)
+            else:
+                return await self.__get_scm_project_name_generators(scm_id)
 
-            while len(names) > 0:
-                generators.append(
-                    page_generator(
-                        retrieve_list_of_projects,
-                        "projects",
-                        client=self._client,
-                        limit=MAX_RECORD_COUNT,
-                        names=names[:MAX_NAMES_IN_QUERY],
-                        **additional_params,
-                    )
-                )
-
-                del names[:MAX_NAMES_IN_QUERY]
-
-            return generators
+    async def _include_in_batch(self, repo_cfg: ProjectRepoConfig) -> bool:
+        return True
 
     async def __get_conversion_batches(
         self,
@@ -136,20 +150,22 @@ class Converter(RecoverableConverter):
                     self._client, project_data
                 )
 
-                repo_org = await repo_cfg.scm_org
+                if await self._include_in_batch(repo_cfg):
+                    repo_org = await repo_cfg.scm_org
 
-                if cur_batches_by_org.get(repo_org) is None or (
-                    cur_batches_by_org.get(repo_org) is not None
-                    and cur_batches_by_org[repo_org].size >= Converter.__BATCH_SIZE
-                ):
-                    cur_batches_by_org[repo_org] = ConversionBatch(
-                        repo_org,
-                        self.__scm_data[int(self.__target_id)].get("type"),
-                        self.__scm_data[int(self.__target_id)].get("repoBaseUrl"),
-                    )
-                    batches.append(cur_batches_by_org[repo_org])
+                    if cur_batches_by_org.get(repo_org) is None or (
+                        cur_batches_by_org.get(repo_org) is not None
+                        and cur_batches_by_org[repo_org].size
+                        >= BatchConverter.__BATCH_SIZE
+                    ):
+                        cur_batches_by_org[repo_org] = ConversionBatch(
+                            repo_org,
+                            self.__scm_data[int(self.__target_id)].get("type"),
+                            self.__scm_data[int(self.__target_id)].get("repoBaseUrl"),
+                        )
+                        batches.append(cur_batches_by_org[repo_org])
 
-                await cur_batches_by_org[repo_org].add(repo_cfg)
+                    await cur_batches_by_org[repo_org].add(repo_cfg)
 
         return batches
 
@@ -186,10 +202,11 @@ class Converter(RecoverableConverter):
         max_batches: int = 0,
         project_id: str = None,
         override_url_mismatch: bool = False,
+        skip_recovery: bool = False,
     ):
-
         # Delegate recovery of any in-progress conversions to the base class.
-        await super().convert()
+        if not skip_recovery:
+            await super().convert()
 
         await self.__validate_conversion(override_url_mismatch)
         await self.__convert_projects(max_batches=max_batches, project_id=project_id)
