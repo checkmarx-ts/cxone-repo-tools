@@ -9,7 +9,7 @@ The `export-scms` option will export the SCM definition with the important field
 * `scm_id`: The `SCM ID` used as a `source` or `target` SCM for operations requiring an `SCM ID`.
 * `scm_instance_name`: A human-readable reference to the SCM connection identified by the `SCM ID`.
 
-Explanation of the execution should include the human-readable name of the SCM connection.
+Explanation of the command should include the human-readable name of the SCM connection.
 
 ## `export-projects` data
 

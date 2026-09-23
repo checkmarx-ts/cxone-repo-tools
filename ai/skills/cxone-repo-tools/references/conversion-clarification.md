@@ -46,11 +46,6 @@
   4. Import the project via the conversion API to connect the `target` SCM as the
      authentication method for the project.
 
-* The concept of "one or all projects" for conversion means:
-  * Parameters to the conversion can specify a single project id for conversion.  In this case, only one project will be converted.
-  * If a single project is not specified in the conversion parameters, all projects from `source` `SCM IDs` will be converted
-    to use the `target` `SCM ID`.
-
 ## Conversion Timing
 
 The time it takes to perform the complete conversion will depend on the number of projects

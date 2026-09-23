@@ -10,7 +10,7 @@ At a high level, this tool does the following:
 
 * Dumps a list of SCM connection definitions to a CSV.
 * Dumps a list of projects with associated SCM connections to a CSV.
-* Changes the SCM connection for one or all projects to another SCM of the same type.
+* Changes the SCM connection for one or more projects to another SCM of the same type.
 * Disconnects the SCM connection for one or all projects connected to a specific SCM.
 * Establishes an SCM connection for one project not currently associated to an SCM.
 
@@ -23,7 +23,7 @@ assistance with the following:
 
 * Installation of the tool.
 * Analysis of the CSV exports to plan for tool execution.
-* Execution of the tool.
+* Commands that can be copy/pasted to execute the tool.
 
 ### Manual Installation and Execution
 
