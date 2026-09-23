@@ -200,7 +200,7 @@ async def main():
                                   regular expression.
     
     --project-group-match REGEX   Converts projects assigned to at least one group
-                                  whose name matches the provided regular expression.
+                                  whose path matches the provided regular expression.
 
     --regex-ignore-case           Use case-insensitive regular expression matching.
 

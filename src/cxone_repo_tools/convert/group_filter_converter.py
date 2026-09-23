@@ -9,4 +9,8 @@ class GroupFilterConverter(AbstractFilteringBatchConverter):
         self.__groups = Groups(self._client)
 
     async def _include_in_batch(self, repo_cfg: ProjectRepoConfig) -> bool:
-        return True
+        for gid in repo_cfg.groups:
+            if self.matches(str((await self.__groups.get_by_id(gid)).path)):
+                return True
+
+        return False
