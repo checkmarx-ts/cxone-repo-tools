@@ -1,4 +1,7 @@
 {
+  "1.1.1" : [
+    "Fix problem with group filtering when running on Windows."
+  ],
   "1.1.0" : [
     "Project export now shows group assignments for each project, if any.",
     "SCM conversion can now filter projects by regular expression name match.",
