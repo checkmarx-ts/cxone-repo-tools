@@ -8,6 +8,7 @@ from cxone_api import (
     CxOneAuthEndpoint,
 )
 from .. import AGENT
+from ..convert import AbortedConversionException
 
 
 def mt_endpoints() -> str:
@@ -23,10 +24,14 @@ class CxOneClientFactory:
 
     @staticmethod
     def __secret(value: str | None, in_env: bool, env_var: str, label: str) -> str:
-        secret = os.environ.get(env_var) if in_env else value
-
-        if secret is None or len(secret) == 0:
-            raise ValueError(f"{label} was not provided.")
+        if in_env:
+            secret = os.environ.get(env_var)
+            if secret is None or len(secret) == 0:
+                raise AbortedConversionException.missing_secret_env(env_var, label)
+        else:
+            secret = value
+            if secret is None or len(secret) == 0:
+                raise AbortedConversionException.empty_secret(label)
 
         return secret
 

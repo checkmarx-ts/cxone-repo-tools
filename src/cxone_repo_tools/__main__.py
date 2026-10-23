@@ -134,7 +134,6 @@ async def main():
         print(cex, file=sys.stderr, flush=True)
     except AbortedConversionException as acex:
         print(acex)
-        exit(0)
     except Exception:
         print(traceback.format_exc(), file=sys.stderr, flush=True)
 
