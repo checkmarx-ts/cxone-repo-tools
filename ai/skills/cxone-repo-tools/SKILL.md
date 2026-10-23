@@ -76,6 +76,26 @@ to the user in the following circumstances:
   forming analysis.
 * Reference `references/analysis.md` for information about types of analysis that the user may need.
 
+## Use-Case #3: SCA private package repository configurations
+
+* The commands for this use-case are those listed under the heading
+  `SCA Private Package Repository Configurations` in the `Available Commands` section of
+  the `cxone_repo_tools.__main__` docstring in `references/cxone-repo-tools-docs.md`.  Each
+  command's options are in that command's own section of the same file, located as
+  described above.  Do not assume a fixed set of commands; the list may grow.
+* Reference `references/sca-private-package-repos.md` before answering any question about,
+  or producing any CLI example for, any command in that list, or about private package
+  repository configurations, configuration tags, or Cloud Connections.
+* That reference defines the tool's model: a configuration tag is a group of configurations
+  that is valid to deploy to a project together, and the tool enforces at most one
+  configuration per package manager type in a tag.
+* When producing examples for any command in that list that associates configurations
+  with projects, include the warning from that reference that associations managed outside
+  this tool are not validated and can leave a project with duplicate package manager types,
+  which produces undefined SCA scan results.
+* When helping the user form configuration content, use the content formats in that
+  reference as the starting point and explain which values the user must change.
+
 # Execution Strictly Prohibited
 
 * If asked in a conversation to execute `cxone-repo-tools` either explicitly or implicitly,
