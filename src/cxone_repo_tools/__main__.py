@@ -1,7 +1,8 @@
-import asyncio, sys, traceback, urllib3
+import asyncio, logging, sys, traceback, urllib3
 from docopt import docopt, DocoptExit
 from . import AGENT
 from .client import mt_endpoints, CxOneClientFactory
+from .log import configure_logging
 from .convert import (
     ConversionException,
     AbortedConversionException,
@@ -18,12 +19,14 @@ async def main():
       [--threads THREADS]
       [--retries RETRIES]
       [-k] [--proxy-url PROXY_URL]
+      [--debug] [--log-file LOGFILE]
       <command> [<args>...]
     cxone-repo-tools --tenant TENANT (--cxone-hostname FQDN | --cxone-region REGION)
       --client-id CLIENTID (--client-secret SECRET | --client-secret-env)
       [--threads THREADS]
       [--retries RETRIES]
       [-k] [--proxy-url PROXY_URL]
+      [--debug] [--log-file LOGFILE]
       <command> [<args>...]
 
     -h, --help                    Display help and exit
@@ -62,6 +65,11 @@ async def main():
     
     --threads THREADS             The number of concurrent threads. [default: 2]
 
+    --debug                       Set the log level to DEBUG. The default log level is INFO.
+
+    --log-file LOGFILE            Write log output to a rolling log file instead of stdout.
+                                  The file rolls at 10MB with up to 5 archived files kept.
+
     ## Available Commands
 
     ### SCM Connection Management
@@ -97,6 +105,11 @@ async def main():
         ):
             command_map[args["<command>"]].print_help()
             exit(0)
+
+        configure_logging(bool(args["--debug"]), args["--log-file"])
+        log = logging.getLogger(__name__)
+        log.info(f"{AGENT} executing command {args['<command>']}")
+        log.debug(f"Command arguments: {args['<args>']}")
 
         if bool(args["-k"]):
             urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
