@@ -82,6 +82,11 @@ async def main():
 
     ### SCA Private Package Repository Configurations
 
+    audit-assoc                   Produce a CSV showing configurations associated with each project.
+    manage-tag                    Manage configurations associated with a private repository
+                                  configuration tag.
+    deploy-tag                    Deploy configurations associated with a tag to selected projects.
+    undeploy-tag                  Remove configurations associated with a tag from selected projects.
 
     """
     # fmt: on
