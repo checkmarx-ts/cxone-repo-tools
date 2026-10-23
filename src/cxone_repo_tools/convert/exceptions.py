@@ -38,3 +38,10 @@ class ConversionException(Exception):
         return ConversionException(
             f"Failed to enable SAST incremental scans for project {project_name}"
         )
+
+
+class AbortedConversionException(Exception):
+
+    @staticmethod
+    def no_client() -> AbortedConversionException:
+        return AbortedConversionException("Checkmarx One connection parameters were not provided.")

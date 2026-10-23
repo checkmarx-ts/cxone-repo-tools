@@ -1,4 +1,8 @@
 {
+  "2.0.0" : [
+    "Command line usage revamped.  Review the command line help or use the AI skill to translate old syntax to the new syntax.",
+    "Support OAuth authentication with Checkmarx One to support cron execution scenarios."
+  ],
   "1.1.1" : [
     "Fix problem with group filtering when running on Windows."
   ],
