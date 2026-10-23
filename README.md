@@ -85,8 +85,10 @@ if recovery is not performed automatically.**
 
 ## Other Notes
 
-* Authentication is performed using an API key.  It is suggested that the user that creates the API key has
-  administrative rights in Checkmarx One.
+* Authentication is performed using either an API key or OAuth client credentials.  It is suggested that the
+  user that creates the API key, or the OAuth client, has
+  administrative rights in Checkmarx One.  The API key or OAuth client secret can be provided on the command
+  line or read from the environment variables CX_API_KEY or CX_CLIENT_SECRET.
 
 * There is a destructive step in the conversion process that will disconnect a project from a repository
   before the project is re-connected to a new repository.  This means no scans will be orchestrated by Checkmarx One

@@ -2,7 +2,7 @@ import asyncio, sys, traceback, urllib3
 from docopt import docopt, DocoptExit, ParsedOptions
 from typing import Dict, List, Coroutine
 from . import AGENT
-from .client import mt_endpoints, client_factory
+from .client import mt_endpoints, CxOneClientFactory
 from .export import ProjectAssignmentExport, ScmExport
 from .convert import (
     ConversionException,
@@ -84,15 +84,23 @@ async def main():
     """Usage:
         cxone-repo-tools (-h | --help | --version)
         cxone-repo-tools (export-projects | export-scms)
-                        --tenant TENANT [--threads THREADS]
-                        (--api-key APIKEY | --api-key-env)
+                        --tenant TENANT
                         (--cxone-hostname FQDN | --cxone-region REGION)
+                        (
+                          (--api-key APIKEY | --api-key-env) | 
+                          (--client-id CLIENTID (--client-secret SECRET | --client-secret-env) )
+                        )
+                        [--threads THREADS]
                         [--retries RETRIES]
                         [-k] [--proxy-url PROXY_URL] [--out EXPORT_FILE]
         cxone-repo-tools convert-scms
-                        --tenant TENANT [--threads THREADS]
-                        (--api-key APIKEY | --api-key-env)
+                        --tenant TENANT
                         (--cxone-hostname FQDN | --cxone-region REGION)
+                        (
+                          (--api-key APIKEY | --api-key-env) | 
+                          (--client-id CLIENTID (--client-secret SECRET | --client-secret-env) )
+                        )
+                        [--threads THREADS]
                         [--retries RETRIES]
                         [-k] [--proxy-url PROXY_URL]
                         [--report REPORT_FILE]
@@ -102,24 +110,36 @@ async def main():
                         [--regex-ignore-case]
                         --target-id TARGETID --source-id SOURCEIDS...
         cxone-repo-tools convert-scms
-                        --tenant TENANT [--threads THREADS]
-                        (--api-key APIKEY | --api-key-env)
+                        --tenant TENANT
                         (--cxone-hostname FQDN | --cxone-region REGION)
+                        (
+                          (--api-key APIKEY | --api-key-env) | 
+                          (--client-id CLIENTID (--client-secret SECRET | --client-secret-env) )
+                        )
+                        [--threads THREADS]
                         [--retries RETRIES]
                         [-k] [--proxy-url PROXY_URL]
                         [--report REPORT_FILE]
                         --recovery-only
         cxone-repo-tools disconnect-scm
-                        --tenant TENANT [--threads THREADS]
-                        (--api-key APIKEY | --api-key-env)
+                        --tenant TENANT
                         (--cxone-hostname FQDN | --cxone-region REGION)
+                        (
+                          (--api-key APIKEY | --api-key-env) | 
+                          (--client-id CLIENTID (--client-secret SECRET | --client-secret-env) )
+                        )
+                        [--threads THREADS]
                         [--retries RETRIES]
                         [-k] [--proxy-url PROXY_URL]
                         (--scm-id SCMID | --project-id PROJECTID)
         cxone-repo-tools connect-scm
                         --tenant TENANT
-                        (--api-key APIKEY | --api-key-env)
                         (--cxone-hostname FQDN | --cxone-region REGION)
+                        (
+                          (--api-key APIKEY | --api-key-env) | 
+                          (--client-id CLIENTID (--client-secret SECRET | --client-secret-env) )
+                        )
+                        [--threads THREADS]
                         [--retries RETRIES]
                         [-k] [--proxy-url PROXY_URL]
                         --scm-id SCMID --project-id PROJECTID
@@ -136,13 +156,19 @@ async def main():
     ## Common Options
 
     These options may be used by multiple operations as shown in the
-    usage examples above.
+    usage examples.
 
     --tenant TENANT               Checkmarx One tenant
 
     --api-key APIKEY              Checkmarx One API Key
 
     --api-key-env                 Obtain the API Key from environment variable CX_API_KEY
+
+    --client-id CLIENTID          Checkmarx One OAuth Client ID
+
+    --client-secret SECRET        Checkmarx One OAuth Client Secret
+
+    --client-secret-env           Obtain the OAuth client secret from environment variable CX_CLIENT_SECRET
 
     --cxone-hostname FQDN         The FQDN of the CxOne hostname for your instance
                                   (name only, not the https:// protocol prefix)
@@ -265,9 +291,12 @@ async def main():
         if bool(args["-k"]):
             urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-        client = client_factory(
+        client = CxOneClientFactory.client_factory(
             args["--api-key"],
             args["--api-key-env"],
+            args["--client-id"],
+            args["--client-secret"],
+            args["--client-secret-env"],
             args["--cxone-hostname"],
             args["--cxone-region"],
             args["--tenant"],
