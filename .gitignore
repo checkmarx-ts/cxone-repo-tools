@@ -1,5 +1,9 @@
+.claude/**
+
 docs_build*
 docs/doctrees
+
+.env*
 
 .vscode/launch.json
 **/*.csv

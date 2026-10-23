@@ -38,3 +38,22 @@ class ConversionException(Exception):
         return ConversionException(
             f"Failed to enable SAST incremental scans for project {project_name}"
         )
+
+
+class AbortedConversionException(Exception):
+
+    @staticmethod
+    def no_client() -> AbortedConversionException:
+        return AbortedConversionException(
+            "Checkmarx One connection parameters were not provided."
+        )
+
+    @staticmethod
+    def missing_secret_env(env_var: str, label: str) -> AbortedConversionException:
+        return AbortedConversionException(
+            f"{label} was not found in environment variable {env_var}."
+        )
+
+    @staticmethod
+    def empty_secret(label: str) -> AbortedConversionException:
+        return AbortedConversionException(f"{label} was provided but is empty.")
