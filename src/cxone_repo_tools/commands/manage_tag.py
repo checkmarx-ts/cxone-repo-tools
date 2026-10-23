@@ -7,8 +7,8 @@ from ..convert import AbortedConversionException
 class ManageTagCommand(Command):
     # fmt: off
     """Usage:
-    cxone-repo-tools manage-tag (-h | --help | --version)
-    cxone-repo-tools manage-tag
+      cxone-repo-tools manage-tag (-h | --help | --version)
+      cxone-repo-tools manage-tag
 
     Manage SCA private package repository configurations associated with a private
     repository configuration tag.

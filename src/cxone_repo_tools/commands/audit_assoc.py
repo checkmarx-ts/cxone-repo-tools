@@ -7,8 +7,8 @@ from ..convert import AbortedConversionException
 class AuditAssocCommand(Command):
     # fmt: off
     """Usage:
-    cxone-repo-tools audit-assoc (-h | --help | --version)
-    cxone-repo-tools audit-assoc
+      cxone-repo-tools audit-assoc (-h | --help | --version)
+      cxone-repo-tools audit-assoc
 
     Produce a CSV showing SCA private package repository configurations associated
     with each project.

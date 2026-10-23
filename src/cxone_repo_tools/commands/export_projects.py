@@ -8,8 +8,8 @@ from ..export import ProjectAssignmentExport
 class ExportProjectsCommand(Command):
     # fmt: off
     """Usage:
-    cxone-repo-tools export-projects (-h | --help | --version)
-    cxone-repo-tools export-projects [--out EXPORT_FILE]
+      cxone-repo-tools export-projects (-h | --help | --version)
+      cxone-repo-tools export-projects [--out EXPORT_FILE]
 
     --out EXPORT_FILE             The name of the CSV export file. [default: ./project_export.csv]
 

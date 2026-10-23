@@ -7,8 +7,8 @@ from ..convert import AbortedConversionException
 class DeployTagCommand(Command):
     # fmt: off
     """Usage:
-    cxone-repo-tools deploy-tag (-h | --help | --version)
-    cxone-repo-tools deploy-tag
+      cxone-repo-tools deploy-tag (-h | --help | --version)
+      cxone-repo-tools deploy-tag
 
     Deploy SCA private package repository configurations associated with a tag to
     selected projects.

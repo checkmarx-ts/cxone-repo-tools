@@ -8,8 +8,8 @@ from ..connection import Disconnector
 class DisconnectScmCommand(Command):
     # fmt: off
     """Usage:
-    cxone-repo-tools disconnect-scm (-h | --help | --version)
-    cxone-repo-tools disconnect-scm (--scm-id SCMID | --project-id PROJECTID)
+      cxone-repo-tools disconnect-scm (-h | --help | --version)
+      cxone-repo-tools disconnect-scm (--scm-id SCMID | --project-id PROJECTID)
 
     Disconnect a single project from an SCM or all projects connected to an SCM.
 

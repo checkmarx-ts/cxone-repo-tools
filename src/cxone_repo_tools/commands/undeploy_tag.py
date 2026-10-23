@@ -7,8 +7,8 @@ from ..convert import AbortedConversionException
 class UndeployTagCommand(Command):
     # fmt: off
     """Usage:
-    cxone-repo-tools undeploy-tag (-h | --help | --version)
-    cxone-repo-tools undeploy-tag
+      cxone-repo-tools undeploy-tag (-h | --help | --version)
+      cxone-repo-tools undeploy-tag
 
     Remove SCA private package repository configurations associated with a tag from
     selected projects.

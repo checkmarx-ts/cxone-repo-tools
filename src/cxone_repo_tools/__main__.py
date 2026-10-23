@@ -13,27 +13,27 @@ from .commands import command_map
 async def main():
     # fmt: off
     """Usage:
-    cxone-repo-tools (-h | --help | --version) [<command>]
-    cxone-repo-tools --tenant TENANT (--cxone-hostname FQDN | --cxone-region REGION)
-      (--api-key APIKEY | --api-key-env)
-      [--threads THREADS]
-      [--retries RETRIES]
-      [-k] [--proxy-url PROXY_URL]
-      [--debug] [--log-file LOGFILE]
-      <command> [<args>...]
-    cxone-repo-tools --tenant TENANT (--cxone-hostname FQDN | --cxone-region REGION)
-      --client-id CLIENTID (--client-secret SECRET | --client-secret-env)
-      [--threads THREADS]
-      [--retries RETRIES]
-      [-k] [--proxy-url PROXY_URL]
-      [--debug] [--log-file LOGFILE]
-      <command> [<args>...]
+      cxone-repo-tools (-h | --help | --version) [<command>]
+      cxone-repo-tools --tenant TENANT (--cxone-hostname FQDN | --cxone-region REGION)
+        (--api-key APIKEY | --api-key-env)
+        [--threads THREADS]
+        [--retries RETRIES]
+        [-k] [--proxy-url PROXY_URL]
+        [--debug] [--log-file LOGFILE]
+        <command> [<args>...]
+      cxone-repo-tools --tenant TENANT (--cxone-hostname FQDN | --cxone-region REGION)
+        --client-id CLIENTID (--client-secret SECRET | --client-secret-env)
+        [--threads THREADS]
+        [--retries RETRIES]
+        [-k] [--proxy-url PROXY_URL]
+        [--debug] [--log-file LOGFILE]
+        <command> [<args>...]
 
     -h, --help                    Display help and exit
 
     --version                     Display version and exit
 
-    
+
     ## Connection Options
 
     Define the connection to Checkmarx One.
@@ -62,7 +62,7 @@ async def main():
     -k                            Turn off SSL verification
 
     --proxy-url PROXY_URL         URL to proxy server
-    
+
     --threads THREADS             The number of concurrent threads. [default: 2]
 
     --debug                       Set the log level to DEBUG. The default log level is INFO.

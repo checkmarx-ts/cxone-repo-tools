@@ -8,8 +8,8 @@ from ..export import ScmExport
 class ExportScmsCommand(Command):
     # fmt: off
     """Usage:
-    cxone-repo-tools export-scms (-h | --help | --version)
-    cxone-repo-tools export-scms [--out EXPORT_FILE]
+      cxone-repo-tools export-scms (-h | --help | --version)
+      cxone-repo-tools export-scms [--out EXPORT_FILE]
 
     --out EXPORT_FILE             The name of the CSV export file. [default: ./scm_export.csv]
 

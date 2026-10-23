@@ -14,18 +14,18 @@ from ..convert import (
 class ConvertScmsCommand(Command):
     # fmt: off
     """Usage:
-    cxone-repo-tools convert-scms (-h | --help | --version)
-    cxone-repo-tools convert-scms
-                    [--report REPORT_FILE]
-                    [--max-batches MAXBATCH]
-                    [--ignore-url-mismatch]
-                    [--skip-recovery]
-                    [--project-id PROJECTID | --project-name-match REGEX | --project-group-match REGEX]
-                    [--regex-ignore-case]
-                    --target-id TARGETID --source-id SOURCEIDS...
-    cxone-repo-tools convert-scms
-                    [--report REPORT_FILE]
-                    --recovery-only
+        cxone-repo-tools convert-scms (-h | --help | --version)
+        cxone-repo-tools convert-scms
+                        [--report REPORT_FILE]
+                        [--max-batches MAXBATCH]
+                        [--ignore-url-mismatch]
+                        [--skip-recovery]
+                        [--project-id PROJECTID | --project-name-match REGEX | --project-group-match REGEX]
+                        [--regex-ignore-case]
+                        --target-id TARGETID --source-id SOURCEIDS...
+        cxone-repo-tools convert-scms
+                        [--report REPORT_FILE]
+                        --recovery-only
 
     Converts all projects assigned to source SCMs to target SCM.
 

@@ -8,18 +8,18 @@ from ..connection import Connector
 class ConnectScmCommand(Command):
     # fmt: off
     """Usage:
-    cxone-repo-tools connect-scm (-h | --help | --version)
-    cxone-repo-tools connect-scm
-                    --scm-id SCMID --project-id PROJECTID
-                    --scm-org ORG
-                    [--repo-name REPONAME]
-                    [--protected-branch BRANCH...]
-                    [--sca][--kics][--2ms][--apisec]
-                    [--sast][--sast-incremental][--ossf]
-                    [--container][--aisc]
-                    [--auto-sca-pr]
-                    [--pr-decorations]
-                    [--webhook]
+      cxone-repo-tools connect-scm (-h | --help | --version)
+      cxone-repo-tools connect-scm
+                      --scm-id SCMID --project-id PROJECTID
+                      --scm-org ORG
+                      [--repo-name REPONAME]
+                      [--protected-branch BRANCH...]
+                      [--sca][--kics][--2ms][--apisec]
+                      [--sast][--sast-incremental][--ossf]
+                      [--container][--aisc]
+                      [--auto-sca-pr]
+                      [--pr-decorations]
+                      [--webhook]
 
     Connects a manual scan project to an SCM.
 
