@@ -58,7 +58,15 @@ jobs:
         - name: Check docstrings
           shell: bash
           run: |
+            set -euo pipefail
             cxone-repo-tools -h
+            commands=$(python -c 'from cxone_repo_tools.commands import command_map; print(" ".join(command_map))')
+            test -n "$commands"
+            echo "commands: $commands"
+            for cmd in $commands; do
+              echo "== cxone-repo-tools --tenant dummy --cxone-region US --api-key dummy $cmd -h"
+              cxone-repo-tools --tenant dummy --cxone-region US --api-key dummy "$cmd" -h
+            done
 
   execute-unit-tests:
     name: Unit Tests
