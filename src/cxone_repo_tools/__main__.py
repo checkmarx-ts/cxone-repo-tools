@@ -77,16 +77,25 @@ async def main():
 
     """
     # fmt: on
-    
-    try:
-        args = docopt(main.__doc__.replace("{MTREGION}", mt_endpoints()), version=AGENT, options_first=True, default_help=False)
 
-        if (args['--help'] or args['-h']) and args['<command>'] is None:
+    try:
+        args = docopt(
+            main.__doc__.replace("{MTREGION}", mt_endpoints()),
+            version=AGENT,
+            options_first=True,
+            default_help=False,
+        )
+
+        if (args["--help"] or args["-h"]) and args["<command>"] is None:
             print(main.__doc__)
             exit(0)
-        elif (args['--help'] or args['-h']) and args['<command>'] is not None and args['<command>'] in command_map.keys():
-          command_map[args['<command>']].print_help()
-          exit(0)
+        elif (
+            (args["--help"] or args["-h"])
+            and args["<command>"] is not None
+            and args["<command>"] in command_map.keys()
+        ):
+            command_map[args["<command>"]].print_help()
+            exit(0)
 
         if bool(args["-k"]):
             urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -107,8 +116,10 @@ async def main():
 
         threads = int(args["--threads"])
 
-        if args['<command>'] in command_map.keys():
-            await command_map[args['<command>']](client, threads, AGENT ).execute(args['<args>'])
+        if args["<command>"] in command_map.keys():
+            await command_map[args["<command>"]](client, threads, AGENT).execute(
+                args["<args>"]
+            )
         else:
             print(f"{args['<command>']} is unknown.")
             exit(1)

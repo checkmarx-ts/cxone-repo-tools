@@ -135,12 +135,12 @@ class CxOneClientFactory:
             )
 
         if api_key is not None or apikey_in_env:
-          return CxOneClientFactory.__api_client(
-              api_key,
-              apikey_in_env,
-              auth_endpoint,
-              api_endpoint,
-              proxy,
-              ssl_verify,
-              retries,
-          )
+            return CxOneClientFactory.__api_client(
+                api_key,
+                apikey_in_env,
+                auth_endpoint,
+                api_endpoint,
+                proxy,
+                ssl_verify,
+                retries,
+            )
