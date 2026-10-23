@@ -108,7 +108,7 @@ async def main():
 
         configure_logging(bool(args["--debug"]), args["--log-file"])
         log = logging.getLogger(__name__)
-        log.info(f"{AGENT} executing command {args['<command>']}")
+        log.info(f"{AGENT} invoked with command {args['<command>']}")
         log.debug(f"Command arguments: {args['<args>']}")
 
         if bool(args["-k"]):
@@ -131,9 +131,19 @@ async def main():
         threads = int(args["--threads"])
 
         if args["<command>"] in command_map.keys():
-            await command_map[args["<command>"]](client, threads, AGENT).execute(
-                args["<args>"]
-            )
+            command = args["<command>"]
+            log.info(f"Command {command} started.")
+            try:
+                await command_map[command](client, threads, AGENT).execute(
+                    args["<args>"]
+                )
+            except (ConversionException, AbortedConversionException) as ex:
+                log.error(f"Command {command} failed: {ex}")
+                raise
+            except Exception as ex:
+                log.error(f"Command {command} failed: {ex}", exc_info=True)
+                raise
+            log.info(f"Command {command} finished.")
         else:
             print(f"{args['<command>']} is unknown.")
             print(actual_docstring)
