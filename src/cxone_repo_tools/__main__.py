@@ -79,15 +79,16 @@ async def main():
     # fmt: on
 
     try:
+        actual_docstring = main.__doc__.replace("{MTREGION}", mt_endpoints())
         args = docopt(
-            main.__doc__.replace("{MTREGION}", mt_endpoints()),
+            actual_docstring,
             version=AGENT,
             options_first=True,
             default_help=False,
         )
 
         if (args["--help"] or args["-h"]) and args["<command>"] is None:
-            print(main.__doc__)
+            print(actual_docstring)
             exit(0)
         elif (
             (args["--help"] or args["-h"])
@@ -122,6 +123,7 @@ async def main():
             )
         else:
             print(f"{args['<command>']} is unknown.")
+            print(actual_docstring)
             exit(1)
 
         exit(0)
