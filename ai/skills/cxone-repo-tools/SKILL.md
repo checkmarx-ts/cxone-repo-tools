@@ -23,8 +23,28 @@ Reference `references/install.md` to understand:
 * The location of the artifacts that should be used when instructing the user to obtain
   artifacts.
 
-Reference `references/cxone-repo-tools-docs.md` for docopt CLI documentation found in the
-`__main__` docstring.
+Reference `references/cxone-repo-tools-docs.md` for the docopt CLI documentation.  This file is
+generated from Python docstrings and the CLI documentation is split across several sections:
+
+* The section `cxone_repo_tools.__main__` (function `main`) documents the **global options**: the
+  connection options, the operation options, and the list of available commands.  Its usage
+  lines end with `<command> [<args>...]`, which is a placeholder for a command and that
+  command's own options.
+* Each command is documented in its own section with a heading of the form
+  `cxone_repo_tools.commands.<module>` containing a class named `<Name>Command`.  The class
+  docstring starts with `Usage:` and the first usage line names the command as it is typed on the
+  command line (for example `cxone-repo-tools disconnect-scm ...`).  The options listed in that
+  section are valid **only after** that command name.
+* To find the documentation for a command, search `references/cxone-repo-tools-docs.md` for a
+  usage line that begins with `cxone-repo-tools <command>`.  Do not rely on the module or class
+  name to identify the command.
+* A command listed under `Available Commands` in the `__main__` section that has no matching
+  command section is not documented and should not be offered to the user.
+
+A complete invocation is composed from both sections.  Reference the section
+`Composing CLI Invocations` in `references/usage-clarification.md` for the composition rules,
+the required ordering, and the forms for obtaining help.  Every CLI example produced for the user
+MUST follow those rules.
 
 Reference `references/region-monikers.md` for Checkmarx One multi-tenant region monikers
 used as values with parameter `--cxone-region`.

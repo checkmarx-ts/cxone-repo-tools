@@ -25,8 +25,8 @@ async def main():
       [--retries RETRIES]
       [-k] [--proxy-url PROXY_URL]
       <command> [<args>...]
-      
-    -h, --help                     Display help and exit
+
+    -h, --help                    Display help and exit
 
     --version                     Display version and exit
 
@@ -87,11 +87,11 @@ async def main():
             default_help=False,
         )
 
-        if (args["--help"] or args["-h"]) and args["<command>"] is None:
+        if args["--help"] and args["<command>"] is None:
             print(actual_docstring)
             exit(0)
         elif (
-            (args["--help"] or args["-h"])
+            args["--help"]
             and args["<command>"] is not None
             and args["<command>"] in command_map.keys()
         ):
