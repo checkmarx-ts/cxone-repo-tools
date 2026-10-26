@@ -90,7 +90,8 @@ async def main():
     inspect-tag                   Show the configurations associated with a configuration tag.
     update-tag                    Update configurations associated with a private repository
                                   configuration tag.
-    deploy-tag                    Deploy configurations associated with a tag to selected projects.
+    deploy-tag                    Create a tag and its configurations from package manager
+                                  configuration files.
     undeploy-tag                  Delete a tag and the configurations associated with it.
     prune                         Delete tags with no configurations or configurations assigned
                                   to no projects.

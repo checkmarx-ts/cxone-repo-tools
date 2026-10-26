@@ -53,6 +53,31 @@ cxone-repo-tools --tenant mytenant --cxone-region US --api-key-env disconnect-sc
 * `disconnect-scm` comes from `Available Commands`.
 * `--scm-id 12` comes from the `DisconnectScmCommand` section.
 
+### Dynamic Command Docstrings
+
+`cxone-repo-tools-docs.md` is generated from the docstrings as written in the source code.
+Some commands build their docstring at runtime from a template so that the options track
+data defined elsewhere.  For those commands the reference shows the template, with
+placeholders in braces where the generated text belongs.  The placeholders are never typed
+on the command line.
+
+How to recognise and expand a template:
+
+* A usage line or option list containing a token such as `{USAGE_OPTIONS}` or `{PM_OPTIONS}`
+  is a template.  The surrounding description text explains what the placeholder expands to.
+* When the description says an option is generated per **package manager type**, the expansion
+  is one option per supported type, named after the type in lower case.  The supported types
+  are listed in `references/sca-private-package-repos.md`.  Today they are `nuget`, `maven`,
+  `npm`, `pip`, and `gradle`, giving `--nuget FILE`, `--maven FILE`, `--npm FILE`,
+  `--pip FILE`, and `--gradle FILE`.
+* Option argument names in the template (for example `FILE`) keep their meaning for every
+  generated option.
+* The runtime help, `cxone-repo-tools -h <command>`, always shows the fully expanded options.
+  When unsure of an expansion, instruct the user to run that command and paste the output
+  rather than guessing.
+* Treat a literal `{...}` token in a produced example as an error; expand it or ask the user
+  for the help output.
+
 ### Obtaining Help
 
 * `cxone-repo-tools -h` displays the global options and the list of available commands.

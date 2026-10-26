@@ -74,3 +74,19 @@ class InvalidRepositoryConfiguration(Exception):
     @staticmethod
     def tag_not_found(tag_name: str) -> InvalidRepositoryConfiguration:
         return InvalidRepositoryConfiguration(f"No tag found with name: {tag_name}")
+
+    @staticmethod
+    def tag_name_exists(
+        tag_name: str, tag_ids: List[str]
+    ) -> InvalidRepositoryConfiguration:
+        found = "\n".join(f"  {tag_name} ({tag_id})" for tag_id in tag_ids)
+        return InvalidRepositoryConfiguration(
+            f"A tag named {tag_name} already exists:\n{found}\n"
+            "Choose a tag name that is not in use."
+        )
+
+    @staticmethod
+    def no_package_manager_configs() -> InvalidRepositoryConfiguration:
+        return InvalidRepositoryConfiguration(
+            "At least one package manager configuration file must be provided."
+        )

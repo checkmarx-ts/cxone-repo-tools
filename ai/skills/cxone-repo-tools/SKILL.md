@@ -40,6 +40,11 @@ generated from Python docstrings and the CLI documentation is split across sever
   name to identify the command.
 * A command listed under `Available Commands` in the `__main__` section that has no matching
   command section is not documented and should not be offered to the user.
+* Some command docstrings are **templates** that the tool expands at runtime.  In
+  `references/cxone-repo-tools-docs.md` these appear with placeholders in braces, such as
+  `{USAGE_OPTIONS}` or `{PM_OPTIONS}`, in place of option text.  The placeholders are not
+  literal options.  Reference the section `Dynamic Command Docstrings` in
+  `references/usage-clarification.md` for how to expand them before producing an example.
 
 A complete invocation is composed from both sections.  Reference the section
 `Composing CLI Invocations` in `references/usage-clarification.md` for the composition rules,
