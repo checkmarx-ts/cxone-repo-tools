@@ -6,6 +6,7 @@ from .log import configure_logging
 from .convert import (
     ConversionException,
     AbortedConversionException,
+    InvalidRepositoryConfiguration,
 )
 from .commands import command_map
 
@@ -84,6 +85,7 @@ async def main():
 
     audit-assoc                   Produce a CSV showing configurations associated with each project.
     inspect-project               Show the configurations assigned to a single project.
+    inspect-tag                   Show the configurations associated with a configuration tag.
     manage-tag                    Manage configurations associated with a private repository
                                   configuration tag.
     deploy-tag                    Deploy configurations associated with a tag to selected projects.
@@ -143,7 +145,11 @@ async def main():
                 await command_map[command](client, threads, AGENT).execute(
                     args["<args>"]
                 )
-            except (ConversionException, AbortedConversionException) as ex:
+            except (
+                ConversionException,
+                AbortedConversionException,
+                InvalidRepositoryConfiguration,
+            ) as ex:
                 log.error(f"Command {command} failed: {ex}")
                 raise
             except Exception as ex:
@@ -161,6 +167,8 @@ async def main():
         print(bad_args, file=sys.stderr, flush=True)
     except ConversionException as cex:
         print(cex, file=sys.stderr, flush=True)
+    except InvalidRepositoryConfiguration as irc:
+        print(irc, file=sys.stderr, flush=True)
     except AbortedConversionException as acex:
         print(acex)
     except Exception:

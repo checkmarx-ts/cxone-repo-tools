@@ -8,6 +8,7 @@ from .manage_tag import ManageTagCommand
 from .deploy_tag import DeployTagCommand
 from .undeploy_tag import UndeployTagCommand
 from .inspect_project import InspectProjectCommand
+from .inspect_tag import InspectTagCommand
 
 command_map = {
     ExportProjectsCommand.CMD_NAME: ExportProjectsCommand,
@@ -20,4 +21,5 @@ command_map = {
     DeployTagCommand.CMD_NAME: DeployTagCommand,
     UndeployTagCommand.CMD_NAME: UndeployTagCommand,
     InspectProjectCommand.CMD_NAME: InspectProjectCommand,
+    InspectTagCommand.CMD_NAME: InspectTagCommand,
 }

@@ -57,3 +57,16 @@ class AbortedConversionException(Exception):
     @staticmethod
     def empty_secret(label: str) -> AbortedConversionException:
         return AbortedConversionException(f"{label} was provided but is empty.")
+
+
+class InvalidRepositoryConfiguration(Exception):
+
+    @staticmethod
+    def ambiguous_tag_name(
+        tag_name: str, tag_ids: List[str]
+    ) -> InvalidRepositoryConfiguration:
+        found = "\n".join(f"  {tag_name} ({tag_id})" for tag_id in tag_ids)
+        return InvalidRepositoryConfiguration(
+            f"More than one tag is named {tag_name}:\n{found}\n"
+            "Use --tag-id to specify which tag to inspect."
+        )
