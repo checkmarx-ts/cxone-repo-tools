@@ -1,22 +1,19 @@
 import aiofiles, logging
 from docopt import docopt
 from tqdm.asyncio import tqdm
-from typing import Dict, List
+from typing import List
 from cxone_api.high.sca.registry import (
     PackageRepositoryConfiguration,
     PackageRepositoryConfigurationTag,
-    PackageManagerType,
 )
 from cxone_repo_tools.commands.base import Command
 from cxone_repo_tools.convert import (
     AbortedConversionException,
     InvalidRepositoryConfiguration,
 )
+from .util import pm_usage_options, pm_option_docs, pm_content_files
 
 _log = logging.getLogger(__name__)
-
-# One option per supported package manager type, e.g. --nuget FILE.
-_PM_OPTIONS = {pm: f"--{pm.value}" for pm in PackageManagerType}
 
 
 class DeployTagCommand(Command):
@@ -38,11 +35,7 @@ class DeployTagCommand(Command):
     # fmt: on
 
     __doc__ = __doc__.format(
-        USAGE_OPTIONS=" ".join(f"[{opt} FILE]" for opt in _PM_OPTIONS.values()),
-        PM_OPTIONS="\n\n".join(
-            f"    {opt + ' FILE':<30}Path to the {pm.value} configuration content file."
-            for pm, opt in _PM_OPTIONS.items()
-        ),
+        USAGE_OPTIONS=pm_usage_options(), PM_OPTIONS=pm_option_docs()
     )
 
     CMD_NAME = "deploy-tag"
@@ -59,11 +52,7 @@ class DeployTagCommand(Command):
 
         tag_name = parsed_args["--tag-name"]
 
-        content_files: Dict[PackageManagerType, str] = {
-            pm: parsed_args[opt]
-            for pm, opt in _PM_OPTIONS.items()
-            if parsed_args[opt] is not None
-        }
+        content_files = pm_content_files(parsed_args)
 
         if len(content_files) == 0:
             raise InvalidRepositoryConfiguration.no_package_manager_configs()

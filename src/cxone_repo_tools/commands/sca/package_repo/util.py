@@ -1,5 +1,9 @@
 from cxone_api import CxOneClient
-from cxone_api.high.sca.registry import PackageRepositoryConfigurationTag
+from typing import Dict
+from cxone_api.high.sca.registry import (
+    PackageRepositoryConfigurationTag,
+    PackageManagerType,
+)
 from cxone_repo_tools.convert import InvalidRepositoryConfiguration
 
 
@@ -22,3 +26,29 @@ async def resolve_tag(
         )
 
     return tags[0] if len(tags) == 1 else None
+
+
+# One command line option per supported package manager type, e.g. --nuget FILE.
+PM_OPTIONS = {pm: f"--{pm.value}" for pm in PackageManagerType}
+
+
+def pm_usage_options() -> str:
+    """The usage text for the optional package manager file options."""
+    return " ".join(f"[{opt} FILE]" for opt in PM_OPTIONS.values())
+
+
+def pm_option_docs() -> str:
+    """The option description text for the package manager file options."""
+    return "\n\n".join(
+        f"    {opt + ' FILE':<30}Path to the {pm.value} configuration content file."
+        for pm, opt in PM_OPTIONS.items()
+    )
+
+
+def pm_content_files(parsed_args: Dict) -> Dict[PackageManagerType, str]:
+    """The file path given for each package manager option that was provided."""
+    return {
+        pm: parsed_args[opt]
+        for pm, opt in PM_OPTIONS.items()
+        if parsed_args[opt] is not None
+    }

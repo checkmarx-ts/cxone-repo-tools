@@ -90,3 +90,21 @@ class InvalidRepositoryConfiguration(Exception):
         return InvalidRepositoryConfiguration(
             "At least one package manager configuration file must be provided."
         )
+
+    @staticmethod
+    def no_configuration_of_type(
+        tag_name: str, tag_id: str, package_manager: str
+    ) -> InvalidRepositoryConfiguration:
+        return InvalidRepositoryConfiguration(
+            f"Tag {tag_name} ({tag_id}) has no {package_manager} configuration to update."
+        )
+
+    @staticmethod
+    def duplicate_type_in_tag(
+        tag_name: str, tag_id: str, package_manager: str, config_ids: List[str]
+    ) -> InvalidRepositoryConfiguration:
+        return InvalidRepositoryConfiguration(
+            f"Tag {tag_name} ({tag_id}) has more than one {package_manager} "
+            f"configuration: {', '.join(config_ids)}. Resolve the duplicate before "
+            "updating the tag."
+        )
