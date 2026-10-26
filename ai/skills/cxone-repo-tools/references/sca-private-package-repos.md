@@ -70,6 +70,42 @@ When producing CLI examples for the command that deploys a tag, warn the user th
 * The command that audits associations should be run to confirm the deployment state when
   there is any doubt.
 
+## Recommended Deployment Approach
+
+Recommend the following approach when a user asks how to deploy private package
+repository configurations with this tool.  Each step names an operation; find the command
+that performs it in the SCA command list described at the top of this reference.
+
+1. **Use a single tag if possible.**  One tag holding one configuration per package manager
+   type is the simplest state to manage and audit.  Create additional tags only when
+   different groups of projects genuinely need different repositories.
+2. **Make each configuration cover every repository for its package manager type.**  Because
+   a project can validly hold only one configuration per type, the configuration content for
+   a type should list all private repositories of that type that any project may need.  At
+   scan time every listed repository is queried for the required private packages, so a
+   project does not need a configuration tailored to the repositories it happens to use.
+3. **Deploy the tag, then associate it with all projects.**  Deploy the tag with its
+   configuration content files, then run the operation that automates association of a
+   tag's configurations with projects, selecting all projects with a match-all name filter.
+   Projects that already hold a configuration of a conflicting type are skipped and reported;
+   resolve those by inspecting the project and removing the conflicting association.
+4. **Update the tag, not the projects.**  Changing the content of a configuration in the
+   tag propagates automatically to every project associated with that configuration and takes
+   effect on each project's next scan.  No re-association is needed after a content update.
+5. **Run the automated association periodically.**  Projects created after a deployment have
+   no configurations associated.  Schedule the automated association operation to run on a
+   regular basis, for example daily or from a pipeline, with the same project filter used for
+   the initial deployment.  Projects already holding the tag's configurations are unaffected,
+   so the operation is safe to repeat.  Recommend this for every tag in use.
+6. **Keep configuration content under source control.**  Store the content files passed to
+   the deploy and update operations in a source control repository so that changes are
+   reviewed, versioned, and recoverable.  The tool reads content from files for exactly this
+   reason.
+
+When several tags are unavoidable, warn the user that no two tags associated with the same
+project may contain configurations of the same package manager type, and recommend the
+project audit after any deployment to confirm there are no duplicates.
+
 ## Cloud Connections and Credential Substitution
 
 Configuration content does not contain credentials or repository URLs directly.  Instead
