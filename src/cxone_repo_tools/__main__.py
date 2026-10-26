@@ -84,6 +84,8 @@ async def main():
     ### SCA Private Package Repository Configurations
 
     audit-assoc                   Produce a CSV showing configurations associated with each project.
+    audit-tags                    Produce a CSV showing configuration counts by package manager
+                                  type for each tag.
     inspect-project               Show the configurations assigned to a single project.
     inspect-tag                   Show the configurations associated with a configuration tag.
     manage-tag                    Manage configurations associated with a private repository
