@@ -88,7 +88,7 @@ async def main():
                                   type for each tag.
     inspect-project               Show the configurations assigned to a single project.
     inspect-tag                   Show the configurations associated with a configuration tag.
-    manage-tag                    Manage configurations associated with a private repository
+    update-tag                    Update configurations associated with a private repository
                                   configuration tag.
     deploy-tag                    Deploy configurations associated with a tag to selected projects.
     undeploy-tag                  Remove configurations associated with a tag from selected projects.
