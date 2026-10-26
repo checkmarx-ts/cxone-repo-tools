@@ -1,18 +1,29 @@
+import aiofiles, aiocsv, csv
 from docopt import docopt
+from tqdm.asyncio import tqdm
 from typing import List
+from cxone_api.util import page_generator
+from cxone_api.low.sca.registry.configurations import retrieve_configurations
+from cxone_api.low.projects import retrieve_list_of_projects
+from cxone_api.high.sca.registry import (
+    PackageRepositoryConfiguration,
+    PackageManagerType,
+)
 from .command import Command
 from ..convert import AbortedConversionException
+from ..consts import MAX_RECORD_COUNT
 
 
 class AuditAssocCommand(Command):
     # fmt: off
     """Usage:
       cxone-repo-tools audit-assoc (-h | --help | --version)
-      cxone-repo-tools audit-assoc
+      cxone-repo-tools audit-assoc [--out EXPORT_FILE]
 
-    Produce a CSV showing SCA private package repository configurations associated
+    Produce a summary CSV showing SCA private package repository configurations associated
     with each project.
 
+    --out EXPORT_FILE             The name of the CSV export file. [default: ./assoc_audit.csv]
     """
     # fmt: on
 
@@ -28,9 +39,57 @@ class AuditAssocCommand(Command):
         if self.client is None:
             raise AbortedConversionException.no_client()
 
-        raise NotImplementedError(
-            f"Command {AuditAssocCommand.CMD_NAME} is not implemented."
-        )
+        await self.__populate_assigned_project_index()
+
+        package_managers = [pm.value for pm in PackageManagerType]
+
+        async with aiofiles.open(
+            parsed_args["--out"], "wt", encoding="UTF-8"
+        ) as csv_out:
+            writer = aiocsv.AsyncDictWriter(
+                csv_out,
+                quoting=csv.QUOTE_ALL,
+                fieldnames=["project_name", "project_id"] + package_managers,
+            )
+            await writer.writeheader()
+
+            async for project in tqdm(
+                page_generator(
+                    retrieve_list_of_projects,
+                    "projects",
+                    client=self.client,
+                    limit=MAX_RECORD_COUNT,
+                ),
+                desc="Inspecting projects",
+            ):
+                project_id = project.get("id")
+
+                counts = {pm: 0 for pm in package_managers}
+                for cfg in self.__assigned_project_index.get(project_id, []):
+                    counts[cfg.packageManager.value] += 1
+
+                await writer.writerow(
+                    {"project_name": project.get("name"), "project_id": project_id}
+                    | counts
+                )
+
+    async def __populate_assigned_project_index(self):
+        self.__assigned_project_index = {}
+
+        async for cfg_json in page_generator(
+            retrieve_configurations,
+            offset_param="PageNumber",
+            offset_init_value=1,
+            offset_is_by_count=False,
+            client=self.client,
+            PageSize=50,
+        ):
+            cfg = PackageRepositoryConfiguration.from_config_json(self.client, cfg_json)
+            for pid in cfg.associated_projects:
+                if pid not in self.__assigned_project_index.keys():
+                    self.__assigned_project_index[pid] = [cfg]
+                else:
+                    self.__assigned_project_index[pid].append(cfg)
 
     @staticmethod
     def print_help():
