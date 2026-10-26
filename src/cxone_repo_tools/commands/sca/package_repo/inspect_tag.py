@@ -1,11 +1,9 @@
 from docopt import docopt
 from typing import List
-from cxone_api.high.sca.registry import (
-    PackageRepositoryConfiguration,
-    PackageRepositoryConfigurationTag,
-)
+from cxone_api.high.sca.registry import PackageRepositoryConfiguration
 from ...base import AbstractInspectCommand
-from ....convert import AbortedConversionException, InvalidRepositoryConfiguration
+from .util import resolve_tag
+from ....convert import AbortedConversionException
 
 
 class InspectTagCommand(AbstractInspectCommand):
@@ -20,7 +18,8 @@ class InspectTagCommand(AbstractInspectCommand):
     --tag-id TAGID                The ID of the tag to inspect.
 
     --tag-name TAGNAME            The name of the tag to inspect.  Tag names are not
-                                  unique; every tag with the name is inspected.
+                                  unique; if more than one tag has the name, the
+                                  command fails and lists the matching tag ids.
 
     --out EXPORT_FILE             The name of the output file.  Output is written to
                                   stdout if not provided.
@@ -41,39 +40,20 @@ class InspectTagCommand(AbstractInspectCommand):
         if self.client is None:
             raise AbortedConversionException.no_client()
 
-        if parsed_args["--tag-id"] is not None:
-            tags = [
-                await PackageRepositoryConfigurationTag.retrieve_by_id(
-                    self.client, parsed_args["--tag-id"]
-                )
-            ]
-        else:
-            tags = await PackageRepositoryConfigurationTag.retrieve_by_name(
-                self.client, parsed_args["--tag-name"]
-            )
+        tag = await resolve_tag(
+            self.client, parsed_args["--tag-id"], parsed_args["--tag-name"]
+        )
 
-        if len(tags) > 1:
-            raise InvalidRepositoryConfiguration.ambiguous_tag_name(
-                parsed_args["--tag-name"], [tag.tagid for tag in tags]
-            )
-
-        if len(tags) == 0:
+        if tag is None:
             text = f"No tag found with name: {parsed_args['--tag-name']}\n"
         else:
-            sections = []
-            for tag in tags:
-                configs = (
-                    await PackageRepositoryConfiguration.retrieve_tag_configurations(
-                        self.client, tag
-                    )
-                )
-                sections.append(
-                    self._format_configurations(
-                        f"Configurations associated with tag: {tag.name} ({tag.tagid})",
-                        configs,
-                    )
-                )
-            text = "\n".join(sections)
+            configs = await PackageRepositoryConfiguration.retrieve_tag_configurations(
+                self.client, tag
+            )
+            text = self._format_configurations(
+                f"Configurations associated with tag: {tag.name} ({tag.tagid})",
+                configs,
+            )
 
         await self._write_output(text, parsed_args["--out"])
 

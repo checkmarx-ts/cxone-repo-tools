@@ -68,5 +68,9 @@ class InvalidRepositoryConfiguration(Exception):
         found = "\n".join(f"  {tag_name} ({tag_id})" for tag_id in tag_ids)
         return InvalidRepositoryConfiguration(
             f"More than one tag is named {tag_name}:\n{found}\n"
-            "Use --tag-id to specify which tag to inspect."
+            "Use --tag-id to specify the intended tag."
         )
+
+    @staticmethod
+    def tag_not_found(tag_name: str) -> InvalidRepositoryConfiguration:
+        return InvalidRepositoryConfiguration(f"No tag found with name: {tag_name}")
