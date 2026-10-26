@@ -7,6 +7,7 @@ from .scm import (
 )
 from .sca.package_repo import (
     AuditAssocCommand,
+    AutoAssocCommand,
     AuditTagsCommand,
     InspectProjectCommand,
     InspectTagCommand,
@@ -23,6 +24,7 @@ command_map = {
     DisconnectScmCommand.CMD_NAME: DisconnectScmCommand,
     ConnectScmCommand.CMD_NAME: ConnectScmCommand,
     AuditAssocCommand.CMD_NAME: AuditAssocCommand,
+    AutoAssocCommand.CMD_NAME: AutoAssocCommand,
     AuditTagsCommand.CMD_NAME: AuditTagsCommand,
     InspectProjectCommand.CMD_NAME: InspectProjectCommand,
     InspectTagCommand.CMD_NAME: InspectTagCommand,
