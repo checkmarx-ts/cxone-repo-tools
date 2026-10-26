@@ -1,8 +1,8 @@
 from docopt import docopt
 from typing import List
-from .command import Command
-from ..convert import AbortedConversionException
-from ..export import ScmExport
+from ..base import Command
+from ...convert import AbortedConversionException
+from ...export import ScmExport
 
 
 class ExportScmsCommand(Command):

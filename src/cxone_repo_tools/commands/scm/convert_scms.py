@@ -1,8 +1,8 @@
 from docopt import docopt, ParsedOptions
 from typing import List, Coroutine
 from cxone_api import CxOneClient
-from .command import Command
-from ..convert import (
+from ..base import Command
+from ...convert import (
     AbortedConversionException,
     BatchConverter,
     RecoverableConverter,

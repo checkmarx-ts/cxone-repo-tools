@@ -9,9 +9,9 @@ from cxone_api.high.sca.registry import (
     PackageRepositoryConfiguration,
     PackageManagerType,
 )
-from .command import Command
-from ..convert import AbortedConversionException
-from ..consts import MAX_RECORD_COUNT
+from ...base import Command
+from ....convert import AbortedConversionException
+from ....consts import MAX_RECORD_COUNT
 
 
 class AuditAssocCommand(Command):

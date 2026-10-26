@@ -1,7 +1,7 @@
 from docopt import docopt
 from typing import List
-from .command import Command
-from ..convert import AbortedConversionException
+from ...base import Command
+from ....convert import AbortedConversionException
 
 
 class UndeployTagCommand(Command):

@@ -1,8 +1,8 @@
 from docopt import docopt, ParsedOptions
 from typing import List
-from .command import Command
-from ..convert import AbortedConversionException
-from ..connection import Connector
+from ..base import Command
+from ...convert import AbortedConversionException
+from ...connection import Connector
 
 
 class ConnectScmCommand(Command):

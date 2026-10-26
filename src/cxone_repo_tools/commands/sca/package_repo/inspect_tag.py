@@ -4,8 +4,8 @@ from cxone_api.high.sca.registry import (
     PackageRepositoryConfiguration,
     PackageRepositoryConfigurationTag,
 )
-from .inspect_base import AbstractInspectCommand
-from ..convert import AbortedConversionException, InvalidRepositoryConfiguration
+from ...base import AbstractInspectCommand
+from ....convert import AbortedConversionException, InvalidRepositoryConfiguration
 
 
 class InspectTagCommand(AbstractInspectCommand):

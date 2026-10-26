@@ -8,8 +8,8 @@ from cxone_api.high.sca.registry import (
     PackageRepositoryConfigurationTag,
     PackageManagerType,
 )
-from .command import Command
-from ..convert import AbortedConversionException
+from ...base import Command
+from ....convert import AbortedConversionException
 
 
 class AuditTagsCommand(Command):
