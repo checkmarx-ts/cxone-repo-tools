@@ -92,6 +92,8 @@ async def main():
                                   configuration tag.
     deploy-tag                    Deploy configurations associated with a tag to selected projects.
     undeploy-tag                  Remove configurations associated with a tag from selected projects.
+    prune                         Delete tags with no configurations or configurations assigned
+                                  to no projects.
 
     """
     # fmt: on
