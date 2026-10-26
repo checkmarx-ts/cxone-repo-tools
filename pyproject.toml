@@ -10,7 +10,7 @@ dependencies = [
   "aiocsv==1.4.1",
   "aiofiles==25.1.0",
   "tqdm==4.70.0",
-  "cxone-async-api@https://github.com/checkmarx-ts/cxone-async-api/releases/download/1.1.9rc87/cxone_async_api-1.1.9rc87-py3-none-any.whl"
+  "cxone-async-api@https://github.com/checkmarx-ts/cxone-async-api/releases/download/1.1.9rc88/cxone_async_api-1.1.9rc88-py3-none-any.whl"
 ]
 readme = "README.md"
 
