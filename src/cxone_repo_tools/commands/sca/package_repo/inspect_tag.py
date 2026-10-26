@@ -1,9 +1,9 @@
 from docopt import docopt
 from typing import List
 from cxone_api.high.sca.registry import PackageRepositoryConfiguration
-from ...base import AbstractInspectCommand
+from cxone_repo_tools.commands.base import AbstractInspectCommand
 from .util import resolve_tag
-from ....convert import AbortedConversionException
+from cxone_repo_tools.convert import AbortedConversionException
 
 
 class InspectTagCommand(AbstractInspectCommand):

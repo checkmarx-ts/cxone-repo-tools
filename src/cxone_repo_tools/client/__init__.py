@@ -7,8 +7,8 @@ from cxone_api import (
     CxOneApiEndpoint,
     CxOneAuthEndpoint,
 )
-from .. import AGENT
-from ..convert import AbortedConversionException
+from cxone_repo_tools import AGENT
+from cxone_repo_tools.convert import AbortedConversionException
 
 
 def mt_endpoints() -> str:

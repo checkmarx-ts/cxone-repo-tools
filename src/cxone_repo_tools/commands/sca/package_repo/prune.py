@@ -9,8 +9,8 @@ from cxone_api.high.sca.registry import (
     PackageRepositoryConfiguration,
     PackageRepositoryConfigurationTag,
 )
-from ...base import Command
-from ....convert import AbortedConversionException
+from cxone_repo_tools.commands.base import Command
+from cxone_repo_tools.convert import AbortedConversionException
 
 _log = logging.getLogger(__name__)
 

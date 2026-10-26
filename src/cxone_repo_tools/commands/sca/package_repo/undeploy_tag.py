@@ -3,9 +3,12 @@ from docopt import docopt
 from tqdm.asyncio import tqdm
 from typing import List
 from cxone_api.high.sca.registry import PackageRepositoryConfiguration
-from ...base import Command
+from cxone_repo_tools.commands.base import Command
 from .util import resolve_tag
-from ....convert import AbortedConversionException, InvalidRepositoryConfiguration
+from cxone_repo_tools.convert import (
+    AbortedConversionException,
+    InvalidRepositoryConfiguration,
+)
 
 _log = logging.getLogger(__name__)
 

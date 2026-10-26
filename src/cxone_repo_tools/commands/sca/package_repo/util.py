@@ -1,6 +1,6 @@
 from cxone_api import CxOneClient
 from cxone_api.high.sca.registry import PackageRepositoryConfigurationTag
-from ....convert import InvalidRepositoryConfiguration
+from cxone_repo_tools.convert import InvalidRepositoryConfiguration
 
 
 async def resolve_tag(

@@ -10,7 +10,7 @@ from cxone_api.low.code_repository_management import (
 from cxone_api.low.projects import retrieve_list_of_projects
 from cxone_api.high.projects import ProjectRepoConfig
 from cxone_api.high.misc import FeatureFlagInspector
-from ..consts import MAX_RECORD_COUNT, DISCO_API_FLAG, MAX_NAMES_IN_QUERY
+from cxone_repo_tools.consts import MAX_RECORD_COUNT, DISCO_API_FLAG, MAX_NAMES_IN_QUERY
 from .batch import ConversionBatch
 from .recoverable_converter import RecoverableConverter
 

@@ -1,7 +1,7 @@
 from docopt import docopt
 from typing import List
-from ...base import Command
-from ....convert import AbortedConversionException
+from cxone_repo_tools.commands.base import Command
+from cxone_repo_tools.convert import AbortedConversionException
 
 
 class UpdateTagCommand(Command):

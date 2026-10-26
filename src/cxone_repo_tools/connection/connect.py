@@ -1,5 +1,5 @@
 from typing import List
-from ..convert import BatchConverter
+from cxone_repo_tools.convert import BatchConverter
 from cxone_api import CxOneClient
 from cxone_api.util import json_on_ok
 from cxone_api.low.repos_manager import get_scm_by_id

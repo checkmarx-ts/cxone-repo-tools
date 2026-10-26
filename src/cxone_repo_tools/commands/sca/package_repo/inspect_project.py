@@ -3,8 +3,8 @@ from typing import List
 from cxone_api.util import json_on_ok
 from cxone_api.low.projects import retrieve_project_info
 from cxone_api.high.sca.registry import PackageRepositoryConfiguration
-from ...base import AbstractInspectCommand
-from ....convert import AbortedConversionException
+from cxone_repo_tools.commands.base import AbstractInspectCommand
+from cxone_repo_tools.convert import AbortedConversionException
 
 
 class InspectProjectCommand(AbstractInspectCommand):

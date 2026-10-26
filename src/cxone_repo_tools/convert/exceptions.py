@@ -1,6 +1,6 @@
 from __future__ import annotations
 from typing import List, Iterable
-from ..consts import DISCO_API_FLAG
+from cxone_repo_tools.consts import DISCO_API_FLAG
 
 
 class ConversionException(Exception):
