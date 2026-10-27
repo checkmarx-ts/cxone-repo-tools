@@ -1,9 +1,13 @@
 from cxone_api import CxOneClient
-from typing import Dict, List
+import asyncio, logging
+from tqdm.asyncio import tqdm
+from typing import Callable, Dict, List, Set, Tuple
 from cxone_api.high.sca.registry import (
+    PackageRepositoryConfiguration,
     PackageRepositoryConfigurationTag,
     PackageManagerType,
 )
+from cxone_api.high.scan_configuration import ProjectScanConfiguration
 from cxone_repo_tools.convert import InvalidRepositoryConfiguration
 
 
@@ -69,3 +73,80 @@ def parse_filters(filters: str | None) -> List[str]:
 def config_file_exclusion(package_manager: PackageManagerType) -> str:
     """The ant-style exclusion filter for a package manager's configuration file."""
     return f"!**/{package_manager.config_file_name}"
+
+
+_log = logging.getLogger(__name__)
+
+
+async def collect_project_exclusions(
+    configs: List[PackageRepositoryConfiguration],
+) -> Dict[str, Set[str]]:
+    """Re-loads each configuration's project associations and returns, for every
+    associated project, the set of SCA exclusion filters for the configuration
+    files of the configurations it holds."""
+    exclusions: Dict[str, Set[str]] = {}
+    for cfg in configs:
+        await cfg.refresh_associations()
+        for project_id in cfg.associated_projects:
+            exclusions.setdefault(project_id, set()).add(
+                config_file_exclusion(cfg.packageManager)
+            )
+    return exclusions
+
+
+async def __update_project_sca_exclusions(
+    client: CxOneClient,
+    project_exclusions: Dict[str, Set[str]],
+    threads: int,
+    compute: Callable[[List[str], Set[str]], Tuple[List[str], List[str]]],
+    action: str,
+) -> None:
+    semaphore = asyncio.Semaphore(threads)
+
+    async def update(project_id: str, filters: Set[str]) -> None:
+        async with semaphore:
+            project_cfg = ProjectScanConfiguration(client, project_id)
+            current = parse_filters(await project_cfg.SCA.Exclusions.getValue())
+            changed, new_value = compute(current, filters)
+            if len(changed) == 0:
+                _log.debug(f"Project {project_id} SCA exclusions already current.")
+                return
+            await project_cfg.SCA.Exclusions.setValue(",".join(new_value))
+            await project_cfg.commit_config()
+            _log.info(f"Project {project_id} SCA exclusions {action}: {changed}.")
+
+    await tqdm.gather(
+        *[update(pid, filters) for pid, filters in project_exclusions.items()],
+        desc=f"{action.capitalize()} project SCA exclusions",
+    )
+
+
+async def add_project_sca_exclusions(
+    client: CxOneClient, project_exclusions: Dict[str, Set[str]], threads: int
+) -> None:
+    """Appends the given exclusion filters to the SCA file exclusions of each
+    project.  Filters already present are not added again and projects needing
+    no change are not written."""
+
+    def compute(current: List[str], filters: Set[str]) -> Tuple[List[str], List[str]]:
+        added = [f for f in sorted(filters) if f not in current]
+        return added, current + added
+
+    await __update_project_sca_exclusions(
+        client, project_exclusions, threads, compute, "added"
+    )
+
+
+async def remove_project_sca_exclusions(
+    client: CxOneClient, project_exclusions: Dict[str, Set[str]], threads: int
+) -> None:
+    """Removes the given exclusion filters from the SCA file exclusions of each
+    project.  Projects that have none of the filters are not written."""
+
+    def compute(current: List[str], filters: Set[str]) -> Tuple[List[str], List[str]]:
+        removed = [f for f in current if f in filters]
+        return removed, [f for f in current if f not in filters]
+
+    await __update_project_sca_exclusions(
+        client, project_exclusions, threads, compute, "removed"
+    )

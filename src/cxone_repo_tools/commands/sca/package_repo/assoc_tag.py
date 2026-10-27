@@ -1,13 +1,11 @@
-import asyncio, logging
+import logging
 from docopt import docopt
-from tqdm.asyncio import tqdm
-from typing import Dict, List, Set
+from typing import List
 from cxone_api.high.sca.registry import (
     PackageRepositoryConfiguration,
     PackageRepositoryConfigurationTag,
     ProjectPrivateRepoTagAssignment,
 )
-from cxone_api.high.scan_configuration import ProjectScanConfiguration
 from cxone_api.high.sca.registry.exceptions import DuplicatePackageManagerException
 from cxone_api.high.exceptions import NameNotFoundException
 from cxone_repo_tools.commands.base import Command
@@ -15,7 +13,7 @@ from cxone_repo_tools.convert import (
     AbortedConversionException,
     InvalidRepositoryConfiguration,
 )
-from .util import parse_filters, config_file_exclusion
+from .util import collect_project_exclusions, add_project_sca_exclusions
 
 _log = logging.getLogger(__name__)
 
@@ -131,40 +129,8 @@ class AssocTagCommand(Command):
             )
             return
 
-        await self.__update_sca_exclusions(configs)
-
-    async def __update_sca_exclusions(
-        self, configs: List[PackageRepositoryConfiguration]
-    ) -> None:
-        # Re-load each configuration's project associations and collect the
-        # exclusion filter each associated project needs.
-        exclusions: Dict[str, Set[str]] = {}
-        for cfg in configs:
-            await cfg.refresh_associations()
-            for project_id in cfg.associated_projects:
-                exclusions.setdefault(project_id, set()).add(
-                    config_file_exclusion(cfg.packageManager)
-                )
-
-        semaphore = asyncio.Semaphore(self.threads)
-
-        async def update(project_id: str, needed: Set[str]) -> None:
-            async with semaphore:
-                project_cfg = ProjectScanConfiguration(self.client, project_id)
-                filters = parse_filters(await project_cfg.SCA.Exclusions.getValue())
-                missing = [f for f in sorted(needed) if f not in filters]
-                if len(missing) == 0:
-                    _log.debug(f"Project {project_id} SCA exclusions already current.")
-                    return
-                await project_cfg.SCA.Exclusions.setValue(",".join(filters + missing))
-                await project_cfg.commit_config()
-                _log.info(
-                    f"Project {project_id} SCA exclusions updated with {missing}."
-                )
-
-        await tqdm.gather(
-            *[update(pid, needed) for pid, needed in exclusions.items()],
-            desc="Updating project SCA exclusions",
+        await add_project_sca_exclusions(
+            self.client, await collect_project_exclusions(configs), self.threads
         )
 
     @staticmethod

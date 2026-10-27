@@ -26,6 +26,10 @@ class UpdateTagCommand(Command):
     Configurations of other package manager types are not changed.  At least one package
     manager type must be provided.
 
+    Content updates to existing configurations apply to all associated projects on their
+    next scan.  A newly created configuration is NOT associated with projects that already
+    hold the tag's other configurations; run assoc-tag to associate it with those projects.
+
     --tag-id TAGID                The ID of the tag to update.
 
     --tag-name TAGNAME            The name of the tag to update.  Tag names are not
