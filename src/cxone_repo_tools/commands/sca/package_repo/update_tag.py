@@ -19,11 +19,12 @@ class UpdateTagCommand(Command):
       cxone-repo-tools update-tag (-h | --help | --version)
       cxone-repo-tools update-tag (--tag-id TAGID | --tag-name TAGNAME) {USAGE_OPTIONS}
 
-    Update the content of the SCA private package repository configurations associated
-    with a tag.  For each package manager type provided, the configuration of that type
-    associated with the tag is updated with the content of the given file.  Configurations
-    of other package manager types are not changed.  At least one package manager type
-    must be provided.
+    Update the SCA private package repository configurations associated with a tag.  For
+    each package manager type provided, the configuration of that type associated with
+    the tag is updated with the content of the given file.  If the tag has no
+    configuration of that type, one is created from the file and associated with the tag.
+    Configurations of other package manager types are not changed.  At least one package
+    manager type must be provided.
 
     --tag-id TAGID                The ID of the tag to update.
 
@@ -69,19 +70,16 @@ class UpdateTagCommand(Command):
             self.client, tag
         )
 
-        # Validate every requested type before changing anything.
+        # Validate every requested type before changing anything.  A type with no
+        # configuration in the tag is created; a type with more than one is an error.
         targets = {}
         for pm in content_files.keys():
             matches = [cfg for cfg in configs if cfg.packageManager == pm]
-            if len(matches) == 0:
-                raise InvalidRepositoryConfiguration.no_configuration_of_type(
-                    tag.name, tag.tagid, pm.value
-                )
             if len(matches) > 1:
                 raise InvalidRepositoryConfiguration.duplicate_type_in_tag(
                     tag.name, tag.tagid, pm.value, [cfg.configId for cfg in matches]
                 )
-            targets[pm] = matches[0]
+            targets[pm] = matches[0] if len(matches) == 1 else None
 
         contents = {}
         for pm, path in content_files.items():
@@ -89,7 +87,15 @@ class UpdateTagCommand(Command):
                 contents[pm] = await f.read()
 
         for pm, cfg in tqdm(targets.items(), desc="Updating configurations"):
-            if await cfg.update_content(contents[pm]):
+            if cfg is None:
+                cfg = await PackageRepositoryConfiguration.create_new(
+                    self.client, f"{tag.name}-{pm.value}", pm, contents[pm], tags=[tag]
+                )
+                _log.info(
+                    f"Created configuration {cfg.name} ({cfg.configId}) [{pm.value}] "
+                    f"associated with tag {tag.name} ({tag.tagid})."
+                )
+            elif await cfg.update_content(contents[pm]):
                 _log.info(
                     f"Updated configuration {cfg.name} ({cfg.configId}) [{pm.value}] "
                     f"in tag {tag.name} ({tag.tagid})."

@@ -89,8 +89,8 @@ async def main():
                                   type for each tag.
     inspect-project               Show the configurations assigned to a single project.
     inspect-tag                   Show the configurations associated with a configuration tag.
-    update-tag                    Update the content of configurations associated with a tag
-                                  from package manager configuration files.
+    update-tag                    Update or add configurations associated with a tag from
+                                  package manager configuration files.
     deploy-tag                    Create a tag and its configurations from package manager
                                   configuration files.
     undeploy-tag                  Delete a tag and the configurations associated with it.
