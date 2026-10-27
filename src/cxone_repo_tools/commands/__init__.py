@@ -14,7 +14,7 @@ from .sca.package_repo import (
     UpdateTagCommand,
     DeployTagCommand,
     UndeployTagCommand,
-    PruneCommand,
+    PruneRepoConfigsCommand,
 )
 
 command_map = {
@@ -31,5 +31,5 @@ command_map = {
     UpdateTagCommand.CMD_NAME: UpdateTagCommand,
     DeployTagCommand.CMD_NAME: DeployTagCommand,
     UndeployTagCommand.CMD_NAME: UndeployTagCommand,
-    PruneCommand.CMD_NAME: PruneCommand,
+    PruneRepoConfigsCommand.CMD_NAME: PruneRepoConfigsCommand,
 }

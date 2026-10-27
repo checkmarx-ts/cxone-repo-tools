@@ -94,7 +94,7 @@ async def main():
     deploy-tag                    Create a tag and its configurations from package manager
                                   configuration files.
     undeploy-tag                  Delete a tag and the configurations associated with it.
-    prune                         Delete tags with no configurations or configurations assigned
+    prune-repo-configs            Delete tags with no configurations or configurations assigned
                                   to no projects.
 
     """

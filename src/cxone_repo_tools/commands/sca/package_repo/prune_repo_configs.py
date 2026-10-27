@@ -15,11 +15,11 @@ from cxone_repo_tools.convert import AbortedConversionException
 _log = logging.getLogger(__name__)
 
 
-class PruneCommand(Command):
+class PruneRepoConfigsCommand(Command):
     # fmt: off
     """Usage:
-      cxone-repo-tools prune (-h | --help | --version)
-      cxone-repo-tools prune (--tags | --projects) [--confirm]
+      cxone-repo-tools prune-repo-configs (-h | --help | --version)
+      cxone-repo-tools prune-repo-configs (--tags | --projects) [--confirm]
 
     Delete unused SCA private package repository configuration tags or configurations.
     Without --confirm, the tags or configurations that would be deleted are only listed.
@@ -34,12 +34,12 @@ class PruneCommand(Command):
     """
     # fmt: on
 
-    CMD_NAME = "prune"
+    CMD_NAME = "prune-repo-configs"
 
     async def execute(self, cmdline_args: List[str]):
         parsed_args = docopt(
-            PruneCommand.__doc__,
-            [PruneCommand.CMD_NAME] + cmdline_args,
+            PruneRepoConfigsCommand.__doc__,
+            [PruneRepoConfigsCommand.CMD_NAME] + cmdline_args,
             version=self.version,
         )
 
@@ -133,4 +133,4 @@ class PruneCommand(Command):
 
     @staticmethod
     def print_help():
-        print(PruneCommand.__doc__)
+        print(PruneRepoConfigsCommand.__doc__)

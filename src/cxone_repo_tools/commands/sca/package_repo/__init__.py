@@ -6,4 +6,4 @@ from .inspect_tag import InspectTagCommand
 from .update_tag import UpdateTagCommand
 from .deploy_tag import DeployTagCommand
 from .undeploy_tag import UndeployTagCommand
-from .prune import PruneCommand
+from .prune_repo_configs import PruneRepoConfigsCommand

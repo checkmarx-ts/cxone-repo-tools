@@ -4,11 +4,9 @@ from tqdm.asyncio import tqdm
 from typing import List
 from cxone_api.util import page_generator
 from cxone_api.low.sca.registry.tags import retrieve_list_of_configurations_by_tag
-from cxone_api.high.sca.registry import (
-    PackageRepositoryConfigurationTag,
-    PackageManagerType,
-)
+from cxone_api.high.sca.registry import PackageRepositoryConfigurationTag
 from cxone_repo_tools.commands.base import Command
+from .util import PACKAGE_MANAGERS
 from cxone_repo_tools.convert import AbortedConversionException
 
 
@@ -37,7 +35,7 @@ class AuditTagsCommand(Command):
         if self.client is None:
             raise AbortedConversionException.no_client()
 
-        package_managers = [pm.value for pm in PackageManagerType]
+        package_managers = [pm.value for pm in PACKAGE_MANAGERS]
 
         async with aiofiles.open(
             parsed_args["--out"], "wt", encoding="UTF-8"

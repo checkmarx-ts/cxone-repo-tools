@@ -28,8 +28,12 @@ async def resolve_tag(
     return tags[0] if len(tags) == 1 else None
 
 
+# PackageManagerType is an aenum enum in cxone-async-api; pylint cannot infer
+# that it is iterable, so iterate it once here.
+PACKAGE_MANAGERS = list(PackageManagerType)  # pylint: disable=not-an-iterable
+
 # One command line option per supported package manager type, e.g. --nuget FILE.
-PM_OPTIONS = {pm: f"--{pm.value}" for pm in PackageManagerType}
+PM_OPTIONS = {pm: f"--{pm.value}" for pm in PACKAGE_MANAGERS}
 
 
 def pm_usage_options() -> str:

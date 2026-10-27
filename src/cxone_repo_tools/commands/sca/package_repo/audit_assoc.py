@@ -5,11 +5,9 @@ from typing import List
 from cxone_api.util import page_generator
 from cxone_api.low.sca.registry.configurations import retrieve_configurations
 from cxone_api.low.projects import retrieve_list_of_projects
-from cxone_api.high.sca.registry import (
-    PackageRepositoryConfiguration,
-    PackageManagerType,
-)
+from cxone_api.high.sca.registry import PackageRepositoryConfiguration
 from cxone_repo_tools.commands.base import Command
+from .util import PACKAGE_MANAGERS
 from cxone_repo_tools.convert import AbortedConversionException
 from cxone_repo_tools.consts import MAX_RECORD_COUNT
 
@@ -41,7 +39,7 @@ class AuditAssocCommand(Command):
 
         await self.__populate_assigned_project_index()
 
-        package_managers = [pm.value for pm in PackageManagerType]
+        package_managers = [pm.value for pm in PACKAGE_MANAGERS]
 
         async with aiofiles.open(
             parsed_args["--out"], "wt", encoding="UTF-8"
