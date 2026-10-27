@@ -1,4 +1,5 @@
 from cxone_api import CxOneClient
+from cxone_api.exceptions import ResponseException, ConfigurationException
 import asyncio, logging
 from tqdm.asyncio import tqdm
 from typing import Callable, Dict, List, Set, Tuple
@@ -111,15 +112,26 @@ async def __update_project_sca_exclusions(
 
     async def update(project_id: str, filters: Set[str]) -> None:
         async with semaphore:
-            project_cfg = ProjectScanConfiguration(client, project_id)
-            current = parse_filters(await project_cfg.SCA.Exclusions.getValue())
-            changed, new_value = compute(current, filters)
-            if len(changed) == 0:
-                _log.debug(f"Project {project_id} SCA exclusions already current.")
-                return
-            await project_cfg.SCA.Exclusions.setValue(",".join(new_value))
-            await project_cfg.commit_config()
-            _log.info(f"Project {project_id} SCA exclusions {action}: {changed}.")
+            try:
+                project_cfg = ProjectScanConfiguration(client, project_id)
+                current = parse_filters(await project_cfg.SCA.Exclusions.getValue())
+                changed, new_value = compute(current, filters)
+                if len(changed) == 0:
+                    _log.debug(f"Project {project_id} SCA exclusions already current.")
+                    return
+                await project_cfg.SCA.Exclusions.setValue(",".join(new_value))
+                await project_cfg.commit_config()
+                _log.info(f"Project {project_id} SCA exclusions {action}: {changed}.")
+            # cxone-async-api exceptions derive from BaseException, so they are
+            # named explicitly; Exception alone would not catch them.
+            except (  # pylint: disable=broad-exception-caught
+                Exception,
+                ResponseException,
+                ConfigurationException,
+            ) as ex:
+                _log.error(
+                    f"Failed to update SCA exclusions for project {project_id}: {ex}"
+                )
 
     await tqdm.gather(
         *[update(pid, filters) for pid, filters in project_exclusions.items()],
