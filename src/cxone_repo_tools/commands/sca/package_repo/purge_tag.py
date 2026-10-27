@@ -22,7 +22,7 @@ class PurgeTagCommand(Command):
     """Usage:
       cxone-repo-tools purge-tag (-h | --help | --version)
       cxone-repo-tools purge-tag (--tag-id TAGID | --tag-name TAGNAME)
-                  [--confirm] [--skip-project-update]
+                  [--confirm] [--skip-settings-update]
 
     Remove a configuration tag and every SCA private package repository configuration
     associated with it.  Deleting a configuration also removes it from every project
@@ -42,7 +42,7 @@ class PurgeTagCommand(Command):
     --confirm                     Delete the tag and its associated configurations.
                                   Without this flag nothing is deleted.
 
-    --skip-project-update         Do not remove the configuration file exclusions from
+    --skip-settings-update        Do not remove the configuration file exclusions from
                                   the SCA file exclusions of the associated projects.
     """
     # fmt: on
@@ -87,7 +87,7 @@ class PurgeTagCommand(Command):
             )
             return
 
-        if parsed_args["--skip-project-update"]:
+        if parsed_args["--skip-settings-update"]:
             files = ", ".join(
                 sorted({cfg.packageManager.config_file_name for cfg in configs})
             )
