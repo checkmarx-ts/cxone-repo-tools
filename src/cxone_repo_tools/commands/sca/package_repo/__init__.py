@@ -1,5 +1,5 @@
 from .audit_assoc import AuditAssocCommand
-from .auto_assoc import AutoAssocCommand
+from .assoc_tag import AssocTagCommand
 from .audit_tags import AuditTagsCommand
 from .inspect_project import InspectProjectCommand
 from .inspect_tag import InspectTagCommand

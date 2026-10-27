@@ -16,11 +16,11 @@ from cxone_repo_tools.convert import (
 _log = logging.getLogger(__name__)
 
 
-class AutoAssocCommand(Command):
+class AssocTagCommand(Command):
     # fmt: off
     """Usage:
-      cxone-repo-tools auto-assoc (-h | --help | --version)
-      cxone-repo-tools auto-assoc --tag-id TAGID
+      cxone-repo-tools assoc-tag (-h | --help | --version)
+      cxone-repo-tools assoc-tag --tag-id TAGID
                   (--project-name-match REGEX | --project-tag KEY | --project-group PATH)
 
     Associate the SCA private package repository configurations in a tag with the
@@ -39,12 +39,12 @@ class AutoAssocCommand(Command):
     """
     # fmt: on
 
-    CMD_NAME = "auto-assoc"
+    CMD_NAME = "assoc-tag"
 
     async def execute(self, cmdline_args: List[str]):
         parsed_args = docopt(
-            AutoAssocCommand.__doc__,
-            [AutoAssocCommand.CMD_NAME] + cmdline_args,
+            AssocTagCommand.__doc__,
+            [AssocTagCommand.CMD_NAME] + cmdline_args,
             version=self.version,
         )
 
@@ -105,4 +105,4 @@ class AutoAssocCommand(Command):
 
     @staticmethod
     def print_help():
-        print(AutoAssocCommand.__doc__)
+        print(AssocTagCommand.__doc__)
