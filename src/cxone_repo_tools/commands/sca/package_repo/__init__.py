@@ -5,5 +5,6 @@ from .inspect_project import InspectProjectCommand
 from .inspect_tag import InspectTagCommand
 from .update_tag import UpdateTagCommand
 from .create_tag import CreateTagCommand
+from .disassoc_tag import DisassocTagCommand
 from .purge_tag import PurgeTagCommand
 from .prune_repo_configs import PruneRepoConfigsCommand

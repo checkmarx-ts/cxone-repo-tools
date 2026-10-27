@@ -89,6 +89,7 @@ async def main():
                                   type for each tag.
     create-tag                    Create a tag and its configurations from package manager
                                   configuration files.
+    disassoc-tag                  Disassociate a tag's configurations from a single project.
     inspect-project               Show the configurations associated with a single project.
     inspect-tag                   Show the configurations associated with a configuration tag.
     prune-repo-configs            Delete tags with no configurations or configurations associated

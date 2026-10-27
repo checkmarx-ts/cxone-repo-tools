@@ -13,6 +13,7 @@ from .sca.package_repo import (
     InspectTagCommand,
     UpdateTagCommand,
     CreateTagCommand,
+    DisassocTagCommand,
     PurgeTagCommand,
     PruneRepoConfigsCommand,
 )
@@ -30,6 +31,7 @@ command_map = {
     InspectTagCommand.CMD_NAME: InspectTagCommand,
     UpdateTagCommand.CMD_NAME: UpdateTagCommand,
     CreateTagCommand.CMD_NAME: CreateTagCommand,
+    DisassocTagCommand.CMD_NAME: DisassocTagCommand,
     PurgeTagCommand.CMD_NAME: PurgeTagCommand,
     PruneRepoConfigsCommand.CMD_NAME: PruneRepoConfigsCommand,
 }

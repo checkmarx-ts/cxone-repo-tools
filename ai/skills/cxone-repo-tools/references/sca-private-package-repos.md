@@ -54,6 +54,11 @@ the command that performs it.
 * The command that purges a tag removes those SCA file exclusions from the associated
   projects, deletes the tag's configurations, and then deletes the tag.  Deleting a
   configuration removes it from every project it is associated with.
+* The command that disassociates a tag's configurations from a single project removes
+  the SCA file exclusions for those configurations from that project's settings and then
+  removes the associations.  The configurations and the tag are not changed.  Use it to
+  resolve a clash reported by the association command, or to take one project out of a
+  tag's scope.
 * The command that audits associations exports the configurations associated with each
   project so the user can find projects whose associations are not valid.
 
@@ -73,7 +78,9 @@ When producing CLI examples for the command that associates a tag's configuratio
 projects, warn the user that:
 
 * The project must not already have a configuration of a package manager type contained
-  in the tag unless it came from the same tag.
+  in the tag unless it came from the same tag.  A clash is resolved by disassociating the
+  conflicting tag's configurations from the project with the disassociation command, then
+  re-running the association command.
 * Associations made outside this tool are not validated and can leave the project with
   duplicate package manager types.
 * The command that audits associations should be run to confirm the association state when
