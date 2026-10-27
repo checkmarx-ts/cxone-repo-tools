@@ -3,7 +3,6 @@ from docopt import docopt
 from typing import List
 from cxone_api.high.sca.registry import (
     PackageRepositoryConfiguration,
-    PackageRepositoryConfigurationTag,
     ProjectPrivateRepoTagAssignment,
 )
 from cxone_api.high.sca.registry.exceptions import DuplicatePackageManagerException
@@ -13,7 +12,11 @@ from cxone_repo_tools.convert import (
     AbortedConversionException,
     InvalidRepositoryConfiguration,
 )
-from .util import collect_project_exclusions, add_project_sca_exclusions
+from .util import (
+    resolve_tag,
+    collect_project_exclusions,
+    add_project_sca_exclusions,
+)
 
 _log = logging.getLogger(__name__)
 
@@ -22,7 +25,7 @@ class AssocTagCommand(Command):
     # fmt: off
     """Usage:
       cxone-repo-tools assoc-tag (-h | --help | --version)
-      cxone-repo-tools assoc-tag --tag-id TAGID
+      cxone-repo-tools assoc-tag (--tag-id TAGID | --tag-name TAGNAME)
                   (--project-name-match REGEX | --project-tag KEY | --project-group PATH)
                   [--skip-settings-update]
 
@@ -31,6 +34,10 @@ class AssocTagCommand(Command):
     manager type are skipped and reported.  Exactly one project filter is required.
 
     --tag-id TAGID                The ID of the tag whose configurations are associated.
+
+    --tag-name TAGNAME            The name of the tag whose configurations are associated.
+                                  Tag names are not unique; if no tag or more than one tag
+                                  has the name, the command fails.
 
     --project-name-match REGEX    Select projects with names matching the regular
                                   expression.
@@ -64,9 +71,14 @@ class AssocTagCommand(Command):
 
         skip_settings_update = bool(parsed_args["--skip-settings-update"])
 
-        tag = await PackageRepositoryConfigurationTag.retrieve_by_id(
-            self.client, parsed_args["--tag-id"]
+        tag = await resolve_tag(
+            self.client, parsed_args["--tag-id"], parsed_args["--tag-name"]
         )
+
+        if tag is None:
+            raise InvalidRepositoryConfiguration.tag_not_found(
+                parsed_args["--tag-name"]
+            )
 
         if len(tag.associated_configs) == 0:
             raise InvalidRepositoryConfiguration.empty_tag(tag.name, tag.tagid)
