@@ -53,7 +53,7 @@ class AssocTagCommand(Command):
                                   associated with the tag's configurations are updated
                                   to exclude each package manager's configuration file
                                   so a file in the repository cannot override the
-                                  deployed configuration.
+                                  associated configuration.
     """
     # fmt: on
 
@@ -109,7 +109,7 @@ class AssocTagCommand(Command):
 
         for assignee in results.assignees:
             _log.info(
-                f"Assigned tag {tag.name} ({tag.tagid}) configurations to project "
+                f"Associated tag {tag.name} ({tag.tagid}) configurations with project "
                 f"{assignee.projectName} ({assignee.projectId})."
             )
 
@@ -124,7 +124,7 @@ class AssocTagCommand(Command):
 
         if not results.assignment_success:
             raise InvalidRepositoryConfiguration(
-                f"Assignment of tag {tag.name} ({tag.tagid}) configurations failed "
+                f"Association of tag {tag.name} ({tag.tagid}) configurations failed "
                 "for one or more projects."
             )
 
@@ -136,7 +136,7 @@ class AssocTagCommand(Command):
             files = ", ".join(cfg.packageManager.config_file_name for cfg in configs)
             _log.warning(
                 "Project settings were not updated. A package manager configuration "
-                f"file in a project's repository ({files}) will override the deployed "
+                f"file in a project's repository ({files}) will override the associated "
                 "configuration if the file exists."
             )
             return

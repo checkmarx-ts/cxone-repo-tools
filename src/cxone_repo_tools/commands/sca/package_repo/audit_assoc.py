@@ -38,7 +38,7 @@ class AuditAssocCommand(Command):
         if self.client is None:
             raise AbortedConversionException.no_client()
 
-        await self.__populate_assigned_project_index()
+        await self.__populate_associated_project_index()
 
         package_managers = [pm.value for pm in PACKAGE_MANAGERS]
 
@@ -66,7 +66,7 @@ class AuditAssocCommand(Command):
                 project_id = project.get("id")
 
                 counts = {pm: 0 for pm in package_managers}
-                for cfg in self.__assigned_project_index.get(project_id, []):
+                for cfg in self.__associated_project_index.get(project_id, []):
                     counts[cfg.packageManager.value] += 1
 
                 sca_filters = (
@@ -82,8 +82,8 @@ class AuditAssocCommand(Command):
                     | {"sca_file_filters": sca_filters}
                 )
 
-    async def __populate_assigned_project_index(self):
-        self.__assigned_project_index = {}
+    async def __populate_associated_project_index(self):
+        self.__associated_project_index = {}
 
         async for cfg_json in page_generator(
             retrieve_configurations,
@@ -95,10 +95,10 @@ class AuditAssocCommand(Command):
         ):
             cfg = PackageRepositoryConfiguration.from_config_json(self.client, cfg_json)
             for pid in cfg.associated_projects:
-                if pid not in self.__assigned_project_index.keys():
-                    self.__assigned_project_index[pid] = [cfg]
+                if pid not in self.__associated_project_index.keys():
+                    self.__associated_project_index[pid] = [cfg]
                 else:
-                    self.__assigned_project_index[pid].append(cfg)
+                    self.__associated_project_index[pid].append(cfg)
 
     @staticmethod
     def print_help():

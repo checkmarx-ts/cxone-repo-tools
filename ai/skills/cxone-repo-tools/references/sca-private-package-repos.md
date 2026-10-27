@@ -6,8 +6,9 @@ This reference covers the commands listed under the heading
 authoritative set of commands; it may grow over time.  Each command's purpose is given by
 its one-line description in that list, and its options are in the command's own section of
 `cxone-repo-tools-docs.md`, located as described in `SKILL.md` and
-`usage-clarification.md`.  When this reference describes an operation, such as deploying a
-tag or auditing associations, use the command list to find the command that performs it.
+`usage-clarification.md`.  When this reference describes an operation, such as associating a
+tag's configurations with projects or auditing associations, use the command list to find
+the command that performs it.
 
 ## Background
 
@@ -34,45 +35,53 @@ tag or auditing associations, use the command list to find the command that perf
   repository on different scans.
 * Checkmarx One does not enforce unique names for configurations or for configuration tags.
 
-## The Tool's Model: Tags Are Valid Deployment Groups
+## The Tool's Model: Tags Are Valid Association Groups
 
 * A **configuration tag** is used by this tool to model a group of configurations that is
-  valid to deploy to a project together.
+  valid to associate with a project together.
 * The tool **enforces tag membership**: a tag may contain **at most one configuration per
   supported package manager type**.  The command that manages a tag's configurations
   rejects adding a configuration whose package manager type is already represented in the
   tag.
-* The command that deploys a tag associates every configuration in the tag with the
-  selected projects, and the command that undeploys a tag removes them.  Because tag
-  membership is enforced, deploying a single tag to a project never produces a duplicate
-  package manager type on that project.
+* The command that creates a tag creates the tag and one configuration per package
+  manager type from content files.  It does not associate anything with projects.
+* The command that associates a tag's configurations with projects associates every
+  configuration in the tag with the selected projects, then adds an SCA file exclusion
+  for each configuration's file name to the SCA exclusions of every associated project so
+  a file in the repository cannot override the associated configuration.  Because tag
+  membership is enforced, associating a single tag with a project never produces a
+  duplicate package manager type on that project.
+* The command that purges a tag removes those SCA file exclusions from the associated
+  projects, deletes the tag's configurations, and then deletes the tag.  Deleting a
+  configuration removes it from every project it is associated with.
 * The command that audits associations exports the configurations associated with each
   project so the user can find projects whose associations are not valid.
 
 ### Always Warn About Changes Made Outside the Tool
 
 The tag enforcement applies only to operations performed through this tool.  A project can
-be put into an invalid deployment state when configuration associations are managed by
+be put into an invalid association state when configuration associations are managed by
 other means, for example:
 
 * Associating configurations with a project in the Checkmarx One UI.
 * Calling the Checkmarx One API directly, or using the low-level API methods of
   `cxone-async-api`, to associate configurations.
-* Deploying more than one tag to the same project where the tags overlap in package
+* Associating more than one tag with the same project where the tags overlap in package
   manager type.
 
-When producing CLI examples for the command that deploys a tag, warn the user that:
+When producing CLI examples for the command that associates a tag's configurations with
+projects, warn the user that:
 
 * The project must not already have a configuration of a package manager type contained
   in the tag unless it came from the same tag.
 * Associations made outside this tool are not validated and can leave the project with
   duplicate package manager types.
-* The command that audits associations should be run to confirm the deployment state when
+* The command that audits associations should be run to confirm the association state when
   there is any doubt.
 
-## Recommended Deployment Approach
+## Recommended Rollout Approach
 
-Recommend the following approach when a user asks how to deploy private package
+Recommend the following approach when a user asks how to roll out private package
 repository configurations with this tool.  Each step names an operation; find the command
 that performs it in the SCA command list described at the top of this reference.
 
@@ -84,7 +93,7 @@ that performs it in the SCA command list described at the top of this reference.
    a type should list all private repositories of that type that any project may need.  At
    scan time every listed repository is queried for the required private packages, so a
    project does not need a configuration tailored to the repositories it happens to use.
-3. **Deploy the tag, then associate it with all projects.**  Deploy the tag with its
+3. **Create the tag, then associate it with all projects.**  Create the tag with its
    configuration content files, then run the operation that automates association of a
    tag's configurations with projects, selecting all projects with a match-all name filter.
    Projects that already hold a configuration of a conflicting type are skipped and reported;
@@ -92,19 +101,19 @@ that performs it in the SCA command list described at the top of this reference.
 4. **Update the tag, not the projects.**  Changing the content of a configuration in the
    tag propagates automatically to every project associated with that configuration and takes
    effect on each project's next scan.  No re-association is needed after a content update.
-5. **Run the automated association periodically.**  Projects created after a deployment have
+5. **Run the automated association periodically.**  Projects created after the rollout have
    no configurations associated.  Schedule the automated association operation to run on a
    regular basis, for example daily or from a pipeline, with the same project filter used for
-   the initial deployment.  Projects already holding the tag's configurations are unaffected,
+   the initial association.  Projects already holding the tag's configurations are unaffected,
    so the operation is safe to repeat.  Recommend this for every tag in use.
 6. **Keep configuration content under source control.**  Store the content files passed to
-   the deploy and update operations in a source control repository so that changes are
+   the create and update operations in a source control repository so that changes are
    reviewed, versioned, and recoverable.  The tool reads content from files for exactly this
    reason.
 
 When several tags are unavoidable, warn the user that no two tags associated with the same
 project may contain configurations of the same package manager type, and recommend the
-project audit after any deployment to confirm there are no duplicates.
+project audit after any association run to confirm there are no duplicates.
 
 ## Cloud Connections and Credential Substitution
 
@@ -161,7 +170,7 @@ The content of a configuration is the text of a native package manager configura
 file.  The formats below are taken from the Checkmarx One documentation page
 "GitHub Container Registry Integration for SCA Scanner".  They show the **intended basic
 structure** of each format.  The user is expected to **modify the content** before
-deployment, in particular:
+creating or updating a tag, in particular:
 
 * Replace `<MASK_NAME>` with the Cloud Connection name.
 * Replace the repository path segments (the examples use Artifactory paths containing

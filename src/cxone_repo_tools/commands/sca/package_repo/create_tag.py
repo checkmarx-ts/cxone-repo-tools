@@ -16,11 +16,11 @@ from .util import pm_usage_options, pm_option_docs, pm_content_files
 _log = logging.getLogger(__name__)
 
 
-class DeployTagCommand(Command):
+class CreateTagCommand(Command):
     # fmt: off
     """Usage:
-      cxone-repo-tools deploy-tag (-h | --help | --version)
-      cxone-repo-tools deploy-tag --tag-name TAGNAME {USAGE_OPTIONS}
+      cxone-repo-tools create-tag (-h | --help | --version)
+      cxone-repo-tools create-tag --tag-name TAGNAME {USAGE_OPTIONS}
 
     Create a configuration tag and an SCA private package repository configuration for
     each package manager type provided.  Each configuration is created from the content
@@ -38,12 +38,12 @@ class DeployTagCommand(Command):
         USAGE_OPTIONS=pm_usage_options(), PM_OPTIONS=pm_option_docs()
     )
 
-    CMD_NAME = "deploy-tag"
+    CMD_NAME = "create-tag"
 
     async def execute(self, cmdline_args: List[str]):
         parsed_args = docopt(
-            DeployTagCommand.__doc__,
-            [DeployTagCommand.CMD_NAME] + cmdline_args,
+            CreateTagCommand.__doc__,
+            [CreateTagCommand.CMD_NAME] + cmdline_args,
             version=self.version,
         )
 
@@ -84,4 +84,4 @@ class DeployTagCommand(Command):
 
     @staticmethod
     def print_help():
-        print(DeployTagCommand.__doc__)
+        print(CreateTagCommand.__doc__)

@@ -4,6 +4,6 @@ from .audit_tags import AuditTagsCommand
 from .inspect_project import InspectProjectCommand
 from .inspect_tag import InspectTagCommand
 from .update_tag import UpdateTagCommand
-from .deploy_tag import DeployTagCommand
-from .undeploy_tag import UndeployTagCommand
+from .create_tag import CreateTagCommand
+from .purge_tag import PurgeTagCommand
 from .prune_repo_configs import PruneRepoConfigsCommand

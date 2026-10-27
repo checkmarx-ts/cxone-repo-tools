@@ -25,7 +25,7 @@ class AbstractInspectCommand(Command):
         first = first_of_type.get(cfg.packageManager)
         if first is not None and first is not cfg:
             warnings.append(
-                f"A {cfg.packageManager.value} configuration is already assigned to "
+                f"A {cfg.packageManager.value} configuration is already associated with "
                 f"{cls._DUPLICATE_SUBJECT}: {first.name} ({first.configId}). Multiple "
                 "configurations of the same package manager type produce undefined "
                 "SCA scan results."
@@ -51,7 +51,7 @@ class AbstractInspectCommand(Command):
         lines.append("  Content:")
         lines.extend(f"    {line}" for line in (cfg.content or "").splitlines())
 
-        lines.append("  Assigned Projects:")
+        lines.append("  Associated Projects:")
         lines.extend(
             [f"    {project_id}" for project_id in cfg.associated_projects]
             or ["    NONE"]

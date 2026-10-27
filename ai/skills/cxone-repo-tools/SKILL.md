@@ -92,7 +92,7 @@ to the user in the following circumstances:
   or producing any CLI example for, any command in that list, or about private package
   repository configurations, configuration tags, or Cloud Connections.
 * That reference defines the tool's model: a configuration tag is a group of configurations
-  that is valid to deploy to a project together, and the tool enforces at most one
+  that is valid to associate with a project together, and the tool enforces at most one
   configuration per package manager type in a tag.
 * When producing examples for any command in that list that associates configurations
   with projects, include the warning from that reference that associations managed outside

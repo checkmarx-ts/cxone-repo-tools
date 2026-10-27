@@ -75,27 +75,27 @@ async def main():
 
     ### SCM Connection Management
 
+    connect-scm                   Connect a non-connected project to an SCM.
+    convert-scms                  Convert one or more projects to use a different SCM.
+    disconnect-scm                Disconnect a project from the connected SCM.
     export-projects               Export a list of projects connected to an SCM.
     export-scms                   Export a list of the configured SCMs.
-    convert-scms                  Convert one or more projects to use a different SCM.
-    connect-scm                   Connect a non-connected project to an SCM.
-    disconnect-scm                Disconnect a project from the connected SCM.
 
     ### SCA Private Package Repository Configurations
 
+    assoc-tag                     Associate a tag's configurations with projects.
     audit-assoc                   Produce a CSV showing configurations associated with each project.
-    assoc-tag                     Associate a tag's configurations with projects them.
     audit-tags                    Produce a CSV showing configuration counts by package manager
                                   type for each tag.
-    inspect-project               Show the configurations assigned to a single project.
+    create-tag                    Create a tag and its configurations from package manager
+                                  configuration files.
+    inspect-project               Show the configurations associated with a single project.
     inspect-tag                   Show the configurations associated with a configuration tag.
+    prune-repo-configs            Delete tags with no configurations or configurations associated
+                                  with no projects.
+    purge-tag                     Delete a tag and the configurations associated with it.
     update-tag                    Update or add configurations associated with a tag from
                                   package manager configuration files.
-    deploy-tag                    Create a tag and its configurations from package manager
-                                  configuration files.
-    undeploy-tag                  Delete a tag and the configurations associated with it.
-    prune-repo-configs            Delete tags with no configurations or configurations assigned
-                                  to no projects.
 
     """
     # fmt: on

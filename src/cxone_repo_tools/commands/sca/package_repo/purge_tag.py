@@ -17,25 +17,25 @@ from cxone_repo_tools.convert import (
 _log = logging.getLogger(__name__)
 
 
-class UndeployTagCommand(Command):
+class PurgeTagCommand(Command):
     # fmt: off
     """Usage:
-      cxone-repo-tools undeploy-tag (-h | --help | --version)
-      cxone-repo-tools undeploy-tag (--tag-id TAGID | --tag-name TAGNAME)
+      cxone-repo-tools purge-tag (-h | --help | --version)
+      cxone-repo-tools purge-tag (--tag-id TAGID | --tag-name TAGNAME)
                   [--confirm] [--skip-project-update]
 
     Remove a configuration tag and every SCA private package repository configuration
     associated with it.  Deleting a configuration also removes it from every project
-    it is assigned to.
+    it is associated with.
 
     Without --confirm, the tag and the configurations that would be deleted are only
     listed.  With --confirm, the SCA file exclusions for the configuration files are
     removed from every project associated with the configurations, then the
     configurations are deleted, and then the tag is deleted.
 
-    --tag-id TAGID                The ID of the tag to undeploy.
+    --tag-id TAGID                The ID of the tag to purge.
 
-    --tag-name TAGNAME            The name of the tag to undeploy.  Tag names are not
+    --tag-name TAGNAME            The name of the tag to purge.  Tag names are not
                                   unique; if more than one tag has the name, the
                                   command fails and lists the matching tag ids.
 
@@ -47,12 +47,12 @@ class UndeployTagCommand(Command):
     """
     # fmt: on
 
-    CMD_NAME = "undeploy-tag"
+    CMD_NAME = "purge-tag"
 
     async def execute(self, cmdline_args: List[str]):
         parsed_args = docopt(
-            UndeployTagCommand.__doc__,
-            [UndeployTagCommand.CMD_NAME] + cmdline_args,
+            PurgeTagCommand.__doc__,
+            [PurgeTagCommand.CMD_NAME] + cmdline_args,
             version=self.version,
         )
 
@@ -133,4 +133,4 @@ class UndeployTagCommand(Command):
 
     @staticmethod
     def print_help():
-        print(UndeployTagCommand.__doc__)
+        print(PurgeTagCommand.__doc__)

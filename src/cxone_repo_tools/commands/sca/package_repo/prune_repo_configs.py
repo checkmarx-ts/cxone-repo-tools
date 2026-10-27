@@ -26,7 +26,7 @@ class PruneRepoConfigsCommand(Command):
 
     --tags                        Delete tags that have no associated configurations.
 
-    --projects                    Delete configurations that are not assigned to any
+    --projects                    Delete configurations that are not associated with any
                                   project.
 
     --confirm                     Perform the deletions.  Without this flag nothing
@@ -108,7 +108,9 @@ class PruneRepoConfigsCommand(Command):
             if len(cfg.associated_projects) == 0:
                 unused.append(cfg)
 
-        _log.info(f"Found {len(unused)} configurations not assigned to any project.")
+        _log.info(
+            f"Found {len(unused)} configurations not associated with any project."
+        )
 
         if not confirm:
             print("Configurations that would be deleted (use --confirm to delete):")

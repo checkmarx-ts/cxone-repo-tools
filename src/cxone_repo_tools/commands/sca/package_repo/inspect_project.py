@@ -13,7 +13,7 @@ class InspectProjectCommand(AbstractInspectCommand):
       cxone-repo-tools inspect-project (-h | --help | --version)
       cxone-repo-tools inspect-project --project-id PROJECTID [--out EXPORT_FILE]
 
-    Show the SCA private package repository configurations assigned to a project.
+    Show the SCA private package repository configurations associated with a project.
 
     --project-id PROJECTID        The ID of the project to inspect.
 
@@ -44,7 +44,7 @@ class InspectProjectCommand(AbstractInspectCommand):
 
         await self._write_output(
             self._format_configurations(
-                f"Configurations assigned to project: {project.get('name')} ({project_id})",
+                f"Configurations associated with project: {project.get('name')} ({project_id})",
                 configs,
             ),
             parsed_args["--out"],
