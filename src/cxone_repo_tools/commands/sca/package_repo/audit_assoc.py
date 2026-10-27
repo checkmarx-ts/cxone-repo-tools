@@ -6,6 +6,7 @@ from cxone_api.util import page_generator
 from cxone_api.low.sca.registry.configurations import retrieve_configurations
 from cxone_api.low.projects import retrieve_list_of_projects
 from cxone_api.high.sca.registry import PackageRepositoryConfiguration
+from cxone_api.high.scan_configuration import ProjectScanConfiguration
 from cxone_repo_tools.commands.base import Command
 from .util import PACKAGE_MANAGERS
 from cxone_repo_tools.convert import AbortedConversionException
@@ -47,7 +48,9 @@ class AuditAssocCommand(Command):
             writer = aiocsv.AsyncDictWriter(
                 csv_out,
                 quoting=csv.QUOTE_ALL,
-                fieldnames=["project_name", "project_id"] + package_managers,
+                fieldnames=["project_name", "project_id"]
+                + package_managers
+                + ["sca_file_filters"],
             )
             await writer.writeheader()
 
@@ -66,9 +69,17 @@ class AuditAssocCommand(Command):
                 for cfg in self.__assigned_project_index.get(project_id, []):
                     counts[cfg.packageManager.value] += 1
 
+                sca_filters = (
+                    await ProjectScanConfiguration(
+                        self.client, project_id
+                    ).SCA.Exclusions.getValue()
+                    or ""
+                )
+
                 await writer.writerow(
                     {"project_name": project.get("name"), "project_id": project_id}
                     | counts
+                    | {"sca_file_filters": sca_filters}
                 )
 
     async def __populate_assigned_project_index(self):
