@@ -1,5 +1,5 @@
 from cxone_api import CxOneClient
-from typing import Dict
+from typing import Dict, List
 from cxone_api.high.sca.registry import (
     PackageRepositoryConfigurationTag,
     PackageManagerType,
@@ -56,3 +56,16 @@ def pm_content_files(parsed_args: Dict) -> Dict[PackageManagerType, str]:
         for pm, opt in PM_OPTIONS.items()
         if parsed_args[opt] is not None
     }
+
+
+def parse_filters(filters: str | None) -> List[str]:
+    """Splits a comma-separated string of ant-style filters into a list, dropping
+    empty entries and surrounding whitespace."""
+    if filters is None:
+        return []
+    return [f.strip() for f in filters.split(",") if len(f.strip()) > 0]
+
+
+def config_file_exclusion(package_manager: PackageManagerType) -> str:
+    """The ant-style exclusion filter for a package manager's configuration file."""
+    return f"!**/{package_manager.config_file_name}"

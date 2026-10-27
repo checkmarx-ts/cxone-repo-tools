@@ -1,10 +1,13 @@
-import logging
+import asyncio, logging
 from docopt import docopt
-from typing import List
+from tqdm.asyncio import tqdm
+from typing import Dict, List, Set
 from cxone_api.high.sca.registry import (
+    PackageRepositoryConfiguration,
     PackageRepositoryConfigurationTag,
     ProjectPrivateRepoTagAssignment,
 )
+from cxone_api.high.scan_configuration import ProjectScanConfiguration
 from cxone_api.high.sca.registry.exceptions import DuplicatePackageManagerException
 from cxone_api.high.exceptions import NameNotFoundException
 from cxone_repo_tools.commands.base import Command
@@ -12,6 +15,7 @@ from cxone_repo_tools.convert import (
     AbortedConversionException,
     InvalidRepositoryConfiguration,
 )
+from .util import parse_filters, config_file_exclusion
 
 _log = logging.getLogger(__name__)
 
@@ -22,6 +26,7 @@ class AssocTagCommand(Command):
       cxone-repo-tools assoc-tag (-h | --help | --version)
       cxone-repo-tools assoc-tag --tag-id TAGID
                   (--project-name-match REGEX | --project-tag KEY | --project-group PATH)
+                  [--skip-settings-update]
 
     Associate the SCA private package repository configurations in a tag with the
     selected projects.  Projects that already have a configuration of the same package
@@ -36,6 +41,14 @@ class AssocTagCommand(Command):
 
     --project-group PATH          Select projects assigned to the group with the full
                                   path (e.g. /parent/child).
+
+    --skip-settings-update        Do not update project settings after the tag's
+                                  configurations are associated with the projects.
+                                  By default, the SCA file exclusions of every project
+                                  associated with the tag's configurations are updated
+                                  to exclude each package manager's configuration file
+                                  so a file in the repository cannot override the
+                                  deployed configuration.
     """
     # fmt: on
 
@@ -50,6 +63,8 @@ class AssocTagCommand(Command):
 
         if self.client is None:
             raise AbortedConversionException.no_client()
+
+        skip_settings_update = bool(parsed_args["--skip-settings-update"])
 
         tag = await PackageRepositoryConfigurationTag.retrieve_by_id(
             self.client, parsed_args["--tag-id"]
@@ -102,6 +117,55 @@ class AssocTagCommand(Command):
                 f"Assignment of tag {tag.name} ({tag.tagid}) configurations failed "
                 "for one or more projects."
             )
+
+        configs = await PackageRepositoryConfiguration.retrieve_tag_configurations(
+            self.client, tag
+        )
+
+        if skip_settings_update:
+            files = ", ".join(cfg.packageManager.config_file_name for cfg in configs)
+            _log.warning(
+                "Project settings were not updated. A package manager configuration "
+                f"file in a project's repository ({files}) will override the deployed "
+                "configuration if the file exists."
+            )
+            return
+
+        await self.__update_sca_exclusions(configs)
+
+    async def __update_sca_exclusions(
+        self, configs: List[PackageRepositoryConfiguration]
+    ) -> None:
+        # Re-load each configuration's project associations and collect the
+        # exclusion filter each associated project needs.
+        exclusions: Dict[str, Set[str]] = {}
+        for cfg in configs:
+            await cfg.refresh_associations()
+            for project_id in cfg.associated_projects:
+                exclusions.setdefault(project_id, set()).add(
+                    config_file_exclusion(cfg.packageManager)
+                )
+
+        semaphore = asyncio.Semaphore(self.threads)
+
+        async def update(project_id: str, needed: Set[str]) -> None:
+            async with semaphore:
+                project_cfg = ProjectScanConfiguration(self.client, project_id)
+                filters = parse_filters(await project_cfg.SCA.Exclusions.getValue())
+                missing = [f for f in sorted(needed) if f not in filters]
+                if len(missing) == 0:
+                    _log.debug(f"Project {project_id} SCA exclusions already current.")
+                    return
+                await project_cfg.SCA.Exclusions.setValue(",".join(filters + missing))
+                await project_cfg.commit_config()
+                _log.info(
+                    f"Project {project_id} SCA exclusions updated with {missing}."
+                )
+
+        await tqdm.gather(
+            *[update(pid, needed) for pid, needed in exclusions.items()],
+            desc="Updating project SCA exclusions",
+        )
 
     @staticmethod
     def print_help():
