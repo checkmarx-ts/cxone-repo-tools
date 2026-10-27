@@ -115,6 +115,37 @@ When several tags are unavoidable, warn the user that no two tags associated wit
 project may contain configurations of the same package manager type, and recommend the
 project audit after any association run to confirm there are no duplicates.
 
+## Recovering From a Failed Command
+
+The Checkmarx One API has no way to make the multi-step changes these commands perform
+atomically.  Each step is a separate API call, and if a step fails the earlier steps
+remain in effect.  The log identifies the step that failed; a failed project settings
+write is logged as an error naming the project id and the remaining projects are still
+processed in the same run.  Recovery depends on the command:
+
+* **Association command** (associates a tag's configurations with projects): re-run the
+  same command.  Existing associations are kept, exclusion filters already present are
+  not added again, and only the missing work is done.  This command is designed to be
+  re-run on a schedule.
+* **Update command**: re-run the same command.  Existing configurations are updated in
+  place and configurations that were not created on the failed run are created.
+* **Create command**: it is **not** re-runnable.  It refuses to run when a tag with the
+  name already exists, which is the case after a partial failure.  Recover by running the
+  update command with the same tag name and the same content files; it creates the
+  configurations that are missing and leaves the ones that were created.  Alternatively,
+  purge the partial tag and create it again.
+* **Purge command**: it is **not** re-runnable once the tag is deleted, because the tag can
+  no longer be found.  After a partial failure in which the tag still exists, re-run the
+  purge to finish removing exclusions and deleting configurations and the tag.  Because
+  exclusions are removed before configurations are deleted, a failure leaves projects
+  briefly reading repository configuration files while the configuration still exists; if
+  the user decides to keep the tag instead, re-run the association command to restore the
+  exclusions.  If a project settings write failed and the purge then completed, the
+  leftover exclusion filters for that project must be removed through the project's scan
+  settings, since the tag no longer exists for the tool to act on.
+
+The project audit can be used at any time to confirm the resulting state.
+
 ## Cloud Connections and Credential Substitution
 
 Configuration content does not contain credentials or repository URLs directly.  Instead

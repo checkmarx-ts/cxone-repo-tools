@@ -19,14 +19,14 @@ class PruneRepoConfigsCommand(Command):
     # fmt: off
     """Usage:
       cxone-repo-tools prune-repo-configs (-h | --help | --version)
-      cxone-repo-tools prune-repo-configs (--tags | --projects) [--confirm]
+      cxone-repo-tools prune-repo-configs (--tags | --configs) [--confirm]
 
     Delete unused SCA private package repository configuration tags or configurations.
     Without --confirm, the tags or configurations that would be deleted are only listed.
 
     --tags                        Delete tags that have no associated configurations.
 
-    --projects                    Delete configurations that are not associated with any
+    --configs                     Delete configurations that are not associated with any
                                   project.
 
     --confirm                     Perform the deletions.  Without this flag nothing

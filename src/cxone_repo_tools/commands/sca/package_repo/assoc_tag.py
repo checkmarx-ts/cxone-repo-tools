@@ -114,7 +114,10 @@ class AssocTagCommand(Command):
             )
 
         for ex in results.exceptions:
-            _log.warning(f"Project skipped: {ex}")
+            _log.warning(
+                f"Project skipped: {ex} The project's package manager configuration "
+                "associations and SCA exclusions were not changed and should be verified."
+            )
 
         _log.info(
             f"Tag {tag.name} ({tag.tagid}): {len(results.assignees)} projects assigned, "
