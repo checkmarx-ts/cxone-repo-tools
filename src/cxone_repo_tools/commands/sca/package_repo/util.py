@@ -80,14 +80,20 @@ _log = logging.getLogger(__name__)
 
 async def collect_project_exclusions(
     configs: List[PackageRepositoryConfiguration],
+    project_ids: Set[str] | None = None,
 ) -> Dict[str, Set[str]]:
     """Re-loads each configuration's project associations and returns, for every
     associated project, the set of SCA exclusion filters for the configuration
-    files of the configurations it holds."""
+    files of the configurations it holds.
+
+    When ``project_ids`` is given, only those projects are considered; a project
+    in the set receives a filter only for configurations it is associated with."""
     exclusions: Dict[str, Set[str]] = {}
     for cfg in configs:
         await cfg.refresh_associations()
         for project_id in cfg.associated_projects:
+            if project_ids is not None and project_id not in project_ids:
+                continue
             exclusions.setdefault(project_id, set()).add(
                 config_file_exclusion(cfg.packageManager)
             )

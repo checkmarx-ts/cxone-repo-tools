@@ -49,11 +49,11 @@ class AssocTagCommand(Command):
 
     --skip-settings-update        Do not update project settings after the tag's
                                   configurations are associated with the projects.
-                                  By default, the SCA file exclusions of every project
-                                  associated with the tag's configurations are updated
-                                  to exclude each package manager's configuration file
-                                  so a file in the repository cannot override the
-                                  associated configuration.
+                                  By default, the SCA file exclusions of each selected
+                                  project are updated to exclude the configuration file
+                                  of every package manager configuration the project
+                                  is associated with, so a file in the repository
+                                  cannot override the associated configuration.
     """
     # fmt: on
 
@@ -141,8 +141,14 @@ class AssocTagCommand(Command):
             )
             return
 
+        # Only the projects selected by the filter are updated, and each receives
+        # a filter only for the configurations it is actually associated with.
+        selected = {assignee.projectId for assignee in results.assignees}
+
         await add_project_sca_exclusions(
-            self.client, await collect_project_exclusions(configs), self.threads
+            self.client,
+            await collect_project_exclusions(configs, selected),
+            self.threads,
         )
 
     @staticmethod
