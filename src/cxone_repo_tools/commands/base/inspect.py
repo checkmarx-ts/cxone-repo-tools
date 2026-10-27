@@ -85,6 +85,8 @@ class AbstractInspectCommand(Command):
                 for index, cfg in enumerate(configs, start=1)
             )
             text += "\n"
+        else:
+            text += "  NONE\n"
 
         return text
 
