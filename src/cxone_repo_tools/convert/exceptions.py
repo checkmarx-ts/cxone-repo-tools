@@ -86,6 +86,12 @@ class InvalidRepositoryConfiguration(Exception):
         )
 
     @staticmethod
+    def empty_tag(tag_name: str, tag_id: str) -> InvalidRepositoryConfiguration:
+        return InvalidRepositoryConfiguration(
+            f"Tag {tag_name} ({tag_id}) has no configurations to associate."
+        )
+
+    @staticmethod
     def no_package_manager_configs() -> InvalidRepositoryConfiguration:
         return InvalidRepositoryConfiguration(
             "At least one package manager configuration file must be provided."

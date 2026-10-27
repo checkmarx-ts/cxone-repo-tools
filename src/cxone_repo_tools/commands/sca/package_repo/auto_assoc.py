@@ -55,6 +55,9 @@ class AutoAssocCommand(Command):
             self.client, parsed_args["--tag-id"]
         )
 
+        if len(tag.associated_configs) == 0:
+            raise InvalidRepositoryConfiguration.empty_tag(tag.name, tag.tagid)
+
         if parsed_args["--project-tag"] is not None:
             assignment = ProjectPrivateRepoTagAssignment.by_project_tag(
                 self.client, parsed_args["--project-tag"], tag
