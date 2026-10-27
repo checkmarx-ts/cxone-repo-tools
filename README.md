@@ -6,13 +6,10 @@ between Checkmarx One and one or more SCMs to orchestrate scans.  Each connectio
 has an associated authentication method and stores the credentials to perform
 the authentication with the SCM.
 
-At a high level, this tool does the following:
+At a high level, this tool is used to:
 
-* Dumps a list of SCM connection definitions to a CSV.
-* Dumps a list of projects with associated SCM connections to a CSV.
-* Changes the SCM connection for one or more projects to another SCM of the same type.
-* Disconnects the SCM connection for one or all projects connected to a specific SCM.
-* Establishes an SCM connection for one project not currently associated to an SCM.
+* Batch change/add/remove project SCM connections.
+* Batch management of private package repository configurations assigned to projects.
 
 To install this tool, you will need Python 3.10 or greater.
 
@@ -25,6 +22,9 @@ assistance with the following:
 * Analysis of the CSV exports to plan for tool execution.
 * Commands that can be copy/pasted to execute the tool.
 
+If you are trying to understand if this tool will help with a Checkmarx One maintenance scenario,
+you can ask the AI skill or contact Checkmarx Professional Services for assistance.
+
 ### Manual Installation and Execution
 
 The install is typically performed by using a direct URL with an optional associated hash for verification.  The `releases` section of this repo
@@ -34,8 +34,7 @@ Once installed, the command line help can be accessed with the following command
 
 `cxone-repo-tools -h`
 
-This `README` covers the tool topics at a high level.  The command line help and the AI skill are
-the primary documentation.
+The command line help and the AI skill are the primary documentation for this tool.
 
 ## Background
 
