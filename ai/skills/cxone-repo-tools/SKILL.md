@@ -8,10 +8,7 @@ description: Documentation and help for using cxone-repo-tools CLI to perform Ch
 This is a Python CLI that is used to assist in maintaining the code repository
 imported projects in Checkmarx One.
 
-Reference `references/README.md` to understand the scope, purpose, and general
-installation instructions for `cxone-repo-tools`. Also reference
-`references/readme-clarification.md` for clarification about AI interpreting
-what is found in `references/README.md`.
+Reference `references/README.md` to understand basic installation instructions for `cxone-repo-tools`.
 
 Reference `references/install.md` to understand:
 * The version number of the current release that generated this skill.
@@ -67,13 +64,6 @@ of the tool that may be ambiguous when considering information from
 * The analysis output provided by `Use-Case #2` may be helpful in understanding the scope of changes
   that will be made with any given CLI command.
 
-### Output of CLI Commands
-
-Reference `references/README.md` for information related to the following
-additional output to emit with the output of any CLI command provided
-to the user in the following circumstances:
-* When executing `convert-scms` warn of the destructive step and recovery.
-* When executing `disconnect-scm` warn of the destructive step that has no automatic recovery.
 
 ## Use-Case #2: Analyze repository usage data
 
