@@ -24,6 +24,30 @@ the command that performs it.
   Do not instruct the user to add configuration files to repositories when they are using
   this tool.
 
+## Required Permissions
+
+The credential used for the private package repository commands must meet both of the
+following requirements.  Remind the user of them **once, the first time private package
+repository configurations come up in a chat session**, before producing any example.
+
+* **Roles.**  The API key's user, or the OAuth client, must have these Checkmarx One roles:
+  * `view-projects`
+  * `view-project-params`
+  * `update-project-params`
+* **Project access.**  Roles alone do not grant access to projects.  The credential must also
+  be authorized to access the projects it will act on, by one of:
+  * tenant-level authorization,
+  * membership in the groups the projects are assigned to, or
+  * direct project or application assignment.
+
+  A credential without access to a project cannot read or update that project's
+  configuration, so associations and SCA exclusion updates for it fail or are skipped.
+
+**Recommendation:** use an OAuth client with tenant-level authorization for the association
+command.  It is intended to run unattended on a schedule across many projects, and tenant-level
+authorization avoids the association silently missing projects that fall outside a group or
+assignment scope.
+
 ## Server-Side Behavior That the Tool Works Around
 
 * Checkmarx One does **not** enforce a limit of one configuration per package manager type

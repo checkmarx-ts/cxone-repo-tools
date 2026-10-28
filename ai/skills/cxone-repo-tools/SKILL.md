@@ -100,6 +100,13 @@ of the tool that may be ambiguous when considering information from
 * Reference `references/sca-private-package-repos.md` before answering any question about,
   or producing any CLI example for, any command in that list, or about private package
   repository configurations, configuration tags, or Cloud Connections.
+* The first time in a chat session that private package repository configurations, their
+  commands, tags, or Cloud Connections come up, remind the user of the credential
+  requirements in the `Required Permissions` section of that reference: the three required
+  roles, the need for project access by tenant-level authorization, group membership, or
+  project/application assignment, and the recommendation to use an OAuth client with
+  tenant-level authorization for the association command.  Give this reminder once per
+  session, not with every example.
 * That reference defines the tool's model: a configuration tag is a group of configurations
   that is valid to associate with a project together, and the tool enforces at most one
   configuration per package manager type in a tag.
