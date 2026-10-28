@@ -10,7 +10,6 @@ from cxone_repo_tools.convert import AbortedConversionException
 class InspectProjectCommand(AbstractInspectCommand):
     # fmt: off
     """Usage:
-      cxone-repo-tools inspect-project (-h | --help | --version)
       cxone-repo-tools inspect-project --project-id PROJECTID [--out EXPORT_FILE]
 
     Show the SCA private package repository configurations associated with a project.

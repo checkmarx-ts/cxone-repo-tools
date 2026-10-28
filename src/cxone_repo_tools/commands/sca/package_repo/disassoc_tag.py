@@ -20,7 +20,6 @@ _log = logging.getLogger(__name__)
 class DisassocTagCommand(Command):
     # fmt: off
     """Usage:
-      cxone-repo-tools disassoc-tag (-h | --help | --version)
       cxone-repo-tools disassoc-tag (--tag-id TAGID | --tag-name TAGNAME) --project-id PROJECTID
                   [--confirm] [--skip-settings-update]
 

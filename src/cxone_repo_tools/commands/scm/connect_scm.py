@@ -8,7 +8,6 @@ from cxone_repo_tools.connection import Connector
 class ConnectScmCommand(Command):
     # fmt: off
     """Usage:
-      cxone-repo-tools connect-scm (-h | --help | --version)
       cxone-repo-tools connect-scm
                       --scm-id SCMID --project-id PROJECTID
                       --scm-org ORG

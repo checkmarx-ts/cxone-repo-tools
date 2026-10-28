@@ -19,7 +19,6 @@ _log = logging.getLogger(__name__)
 class CreateTagCommand(Command):
     # fmt: off
     """Usage:
-      cxone-repo-tools create-tag (-h | --help | --version)
       cxone-repo-tools create-tag --tag-name TAGNAME {USAGE_OPTIONS}
 
     Create a configuration tag and an SCA private package repository configuration for

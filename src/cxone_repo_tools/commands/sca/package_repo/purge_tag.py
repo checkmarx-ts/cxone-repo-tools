@@ -20,7 +20,6 @@ _log = logging.getLogger(__name__)
 class PurgeTagCommand(Command):
     # fmt: off
     """Usage:
-      cxone-repo-tools purge-tag (-h | --help | --version)
       cxone-repo-tools purge-tag (--tag-id TAGID | --tag-name TAGNAME)
                   [--confirm] [--skip-settings-update]
 

@@ -24,7 +24,6 @@ _log = logging.getLogger(__name__)
 class AssocTagCommand(Command):
     # fmt: off
     """Usage:
-      cxone-repo-tools assoc-tag (-h | --help | --version)
       cxone-repo-tools assoc-tag (--tag-id TAGID | --tag-name TAGNAME)
                   (--project-name-match REGEX | --project-tag KEY | --project-group PATH)
                   [--skip-settings-update]

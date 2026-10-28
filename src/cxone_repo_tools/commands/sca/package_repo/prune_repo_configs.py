@@ -18,7 +18,6 @@ _log = logging.getLogger(__name__)
 class PruneRepoConfigsCommand(Command):
     # fmt: off
     """Usage:
-      cxone-repo-tools prune-repo-configs (-h | --help | --version)
       cxone-repo-tools prune-repo-configs (--tags | --configs) [--confirm]
 
     Delete unused SCA private package repository configuration tags or configurations.

@@ -16,7 +16,6 @@ from cxone_repo_tools.consts import MAX_RECORD_COUNT
 class AuditAssocCommand(Command):
     # fmt: off
     """Usage:
-      cxone-repo-tools audit-assoc (-h | --help | --version)
       cxone-repo-tools audit-assoc [--out EXPORT_FILE]
 
     Produce a summary CSV showing SCA private package repository configurations associated

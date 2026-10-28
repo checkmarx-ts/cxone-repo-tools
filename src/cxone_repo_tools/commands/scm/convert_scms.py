@@ -14,7 +14,6 @@ from cxone_repo_tools.convert import (
 class ConvertScmsCommand(Command):
     # fmt: off
     """Usage:
-        cxone-repo-tools convert-scms (-h | --help | --version)
         cxone-repo-tools convert-scms
                         [--report REPORT_FILE]
                         [--max-batches MAXBATCH]

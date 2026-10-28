@@ -9,7 +9,6 @@ from cxone_repo_tools.convert import AbortedConversionException
 class InspectTagCommand(AbstractInspectCommand):
     # fmt: off
     """Usage:
-      cxone-repo-tools inspect-tag (-h | --help | --version)
       cxone-repo-tools inspect-tag (--tag-id TAGID | --tag-name TAGNAME) [--out EXPORT_FILE]
 
     Show the SCA private package repository configurations associated with a

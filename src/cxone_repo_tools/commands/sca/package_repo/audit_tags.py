@@ -13,7 +13,6 @@ from cxone_repo_tools.convert import AbortedConversionException
 class AuditTagsCommand(Command):
     # fmt: off
     """Usage:
-      cxone-repo-tools audit-tags (-h | --help | --version)
       cxone-repo-tools audit-tags [--out EXPORT_FILE]
 
     Produce a summary CSV showing the number of SCA private package repository

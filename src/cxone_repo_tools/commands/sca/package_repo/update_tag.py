@@ -16,7 +16,6 @@ _log = logging.getLogger(__name__)
 class UpdateTagCommand(Command):
     # fmt: off
     """Usage:
-      cxone-repo-tools update-tag (-h | --help | --version)
       cxone-repo-tools update-tag (--tag-id TAGID | --tag-name TAGNAME) {USAGE_OPTIONS}
 
     Update the SCA private package repository configurations associated with a tag.  For
