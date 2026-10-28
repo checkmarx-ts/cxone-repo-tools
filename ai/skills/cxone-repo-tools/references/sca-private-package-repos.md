@@ -122,6 +122,22 @@ When several tags are unavoidable, warn the user that no two tags associated wit
 project may contain configurations of the same package manager type, and recommend the
 project audit after any association run to confirm there are no duplicates.
 
+## Audit CSV Data
+
+Two commands write CSV files that the user may provide for analysis or to decide what to do next.
+Both have one column per supported package manager type, named after the type (for example
+`nuget`, `npm`), holding a count.  A count greater than 1 in any such column is a duplicate
+package manager type and should be called out as a problem.
+
+* **Project audit** (the command that audits configuration associations for every project):
+  columns `project_name`, `project_id`, one count column per package manager type giving the
+  number of configurations of that type associated with the project, and `sca_file_filters`
+  holding the project's SCA file exclusions string as stored in Checkmarx One.  A project with
+  all counts at 0 has no private package repository configurations.
+* **Tag audit** (the command that audits every tag): columns `tag_name`, `tag_id`, and one
+  count column per package manager type giving the number of configurations of that type in
+  the tag.  A tag with all counts at 0 is empty.
+
 ## Recovering From a Failed Command
 
 The Checkmarx One API has no way to make the multi-step changes these commands perform

@@ -100,54 +100,41 @@ to fully perform the conversion.
 ## Execution Workflow
 
 Changing the SCM connection for all projects connected to an SCM starts with obtaining one or more `source` `SCM IDs`
-and a single `target` `SCM ID`.  The CSV output options can be used to obtain lists of data that will assist in
+and a single `target` `SCM ID`.  The CSV export commands can be used to obtain lists of data that will assist in
 obtaining the required `SCM IDs`.
 
 The conversion can execute multiple times and will perform conversion on any projects found connected to any `source` SCM
 and convert them to the `target` SCM.
 
-It is suggested to pick a single work directory for executing the tool as `*.recovery.json` files are written during the
-conversion process.  These recovery files are loaded on start of the tool and executed before any processing of new
-repositories.  When all projects in a recovery file are converted, the recovery file is deleted.
-
-The recovery files have the following purpose:
-
-* To resume the conversion of a batch of projects in the event the program stops executing before 
-  a project batch is completely converted.
-* To retry projects that failed conversion if the projects need manual configuration before the
-  conversion is successful.
-
-**If there is a failure, preserve the recovery files so that disconnected repositories can be reconnected
-manually if the recovery doesn't do it automatically.  Contact Checkmarx Professional Services for assistance
-if recovery is not performed automatically.**
+There is a destructive step in the conversion process that disconnects a project from its repository before the project
+is re-connected to the new repository.  No scans are orchestrated by Checkmarx One for that project until it is
+re-connected to an SCM.
 
 ## Conversion Recovery
 
-* Recovery is automatic on each execution with the `convert-scms` option and when one or more recovery
-  files are found in the current working directory.
+Recovery is how an interrupted or partially failed conversion is completed.
+
+* `*.recovery.json` files are written to the current working directory during the conversion process.  Run the tool
+  from a single working directory so the recovery files are found on later runs.
+* Recovery is automatic on each execution of the conversion command when one or more recovery files are found in
+  the current working directory.  Recovery runs before any new projects are processed.
   * The `--recovery-only` option means that the program ends after recovery is completed.
   * The `--skip-recovery` option means that the program will not attempt to perform recovery but will
     not remove the recovery files.
-* A completed recovery only indicates an attempt to complete conversions of the projects found
-  in the recovery file.
-    * Zero or more projects found in the recovery file may be successfully converted
-      as part of the recovery attempt.
-    * Zero or more projects found in the recovery file may fail to convert
-      as part of the recovery attempt.
-* Recovery files are not removed until all projects in the recovery files have been successfully
-  converted.
+* The recovery files serve two purposes:
+  * To resume the conversion of a batch of projects if the program stops before the batch is completely converted.
+    If the program is interrupted before a project is converted fully, the next run finishes the conversion.
+  * To retry projects that failed conversion once the cause is fixed, for example when a project needs manual
+    configuration before it can be imported.
+* A completed recovery only indicates an attempt to complete conversions of the projects found in the recovery file.
+  Zero or more of those projects may succeed and zero or more may fail on any given attempt.
+* Recovery files are not removed until all projects in them have been successfully converted.
+* Recovery failures can happen when repositories are misconfigured or have been renamed and the stored repository URL
+  is no longer valid.  The recovery file can be edited to supply the correct repository URL before the next run.
+* If a project is disconnected and there is no recovery file for it, recovery is not possible.  The project must be
+  re-connected with the command that connects a project to an SCM, supplying the SCM id, organization, repository name,
+  protected branches, and engine settings.  A project export taken before the conversion is the source for those values.
 
-## Other Notes
-
-* There is a destructive step in the conversion process that will disconnect a project from a repository
-  before the project is re-connected to a new repository.  This means no scans will be orchestrated by Checkmarx One
-  for that project until the project is re-connected to an SCM.
-
-* If the program is interrupted before a project is converted fully, the recovery process should
-  finish the conversion on the next run.
-
-* Recovery failures can happen when repositories are misconfigured or have been renamed and the stored repository
-  URL is no longer valid.  The recovery file can be modified to perform the import for the correct repository URL.
-
-* If a project is disconnected and there is no recovery file, it can be manually re-connected by providing required
-  additional parameters.
+**If there is a failure, preserve the recovery files so that disconnected repositories can be reconnected
+if the recovery doesn't do it automatically.  Contact Checkmarx Professional Services for assistance
+if recovery is not performed automatically.**
