@@ -5,8 +5,9 @@ description: Documentation and help for using cxone-repo-tools CLI for SCM and p
 
 # Checkmarx One Repository Tools
 
-This is a Python CLI that is used to assist in maintaining the code repository
-imported projects in Checkmarx One.
+This is a Python CLI that is used to manage repository connections in Checkmarx One:
+the SCM connections of Code Repository import projects, and the SCA private package
+repository configurations associated with projects.
 
 Reference `references/README.md` to understand basic information about `cxone-repo-tools`.
 
