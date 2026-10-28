@@ -6,7 +6,7 @@ Checkmarx One.
 At a high level, this tool is used to:
 
 * Batch change/add/remove project SCM connections.
-* Batch management of private package repository configurations associated to projects.
+* Batch management of private package repository configurations associated with projects.
 
 To install this tool, you will need Python 3.10 or greater.
 
