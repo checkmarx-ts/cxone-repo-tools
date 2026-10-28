@@ -56,14 +56,32 @@ Reference `references/usage-clarification.md` for clarification on execution and
 of the tool that may be ambiguous when considering information from
 `references/cxone-repo-tools-docs.md`.
 
-## Use-Case #1: Produce CLI execution examples for repository connection management
+## Use-Case #1: Produce CLI execution examples for SCM connection management
 
-* Reference `references/conversion-clarification.md` for information about authentication conversions.
+* The commands for this use-case are those listed under the heading
+  `SCM Connection Management` in the `Available Commands` section of the
+  `cxone_repo_tools.__main__` docstring in `references/cxone-repo-tools-docs.md`.  Each
+  command's options are in that command's own section of the same file, located as
+  described above.  Do not assume a fixed set of commands; the list may grow.
+* Reference `references/conversion-clarification.md` for information about SCM connections,
+  how projects are converted between SCMs, the limits on which conversions are possible,
+  and how conversion recovery works.
 * Reference `references/helpful-data.md` for information about data that the user can provide to assist in
   forming execution examples.
 * In this context, execution examples are textual data that the user can copy and paste in a terminal.
 * The analysis output provided by `Use-Case #2` may be helpful in understanding the scope of changes
   that will be made with any given CLI command.
+* When producing an example for the command that converts projects to a different SCM, warn
+  that the conversion disconnects each project from its SCM before reconnecting it, that no
+  scans are orchestrated for a project between those steps, and that recovery files written
+  to the working directory must be preserved so an interrupted or failed conversion can be
+  resumed on the next run.
+* When producing an example for the command that disconnects projects from an SCM, warn that
+  the disconnection has no automatic recovery: the project becomes a manual project and can
+  only be reconnected with the command that connects a project to an SCM, which requires the
+  SCM id, organization, repository name, protected branches, and engine settings to be
+  supplied again.  Advise the user to export the project data first so those values are
+  recorded.
 
 
 ## Use-Case #2: Analyze repository usage data

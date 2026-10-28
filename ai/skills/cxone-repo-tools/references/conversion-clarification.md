@@ -1,4 +1,4 @@
-# Repository Authentication Conversions
+# SCM Connection Management and Authentication Conversions
 
 * Checkmarx One establishes a connection to a source code management (SCM) 
   system when the user configures the connection via Code Repository Import.
@@ -16,11 +16,6 @@
   such as cloning and updating `pull-request` comments or status.
 * The stored credentials are not retrievable for use outside of internal Checkmarx
   One operations.
-
-## When producing examples for execution
-
-* When using `convert-scms` warn of the destructive step and recovery.
-* When using `disconnect-scm` warn of the destructive step that has no automatic recovery.
 
 ## Projects Connected to an SCM
 
