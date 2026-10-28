@@ -46,6 +46,17 @@
   4. Import the project via the conversion API to connect the `target` SCM as the
      authentication method for the project.
 
+## Conversion Options
+
+* Projects are converted in batches of at most 15 projects.  The user does not have the
+  ability to control the batch size.
+* The `--ignore-url-mismatch` option is used to ignore the mismatch error when converting
+  SCMs and the URL matching check fails.  This option is used to ignore differences
+  in SCM base-urls such as found in the following examples:
+  * `https://scm.mycompany.com` vs. `https://someuser@scm.mycompany.com` indicates the conversion
+    is for authentication to the same SCM but the base URL is not exactly the same.
+  * `https://some_other_user@scm.mycompany.com` vs. `https://someuser@scm.mycompany.com`
+
 ## Conversion Timing
 
 The time it takes to perform the complete conversion will depend on the number of projects
@@ -110,12 +121,23 @@ The recovery files have the following purpose:
 manually if the recovery doesn't do it automatically.  Contact Checkmarx Professional Services for assistance
 if recovery is not performed automatically.**
 
-## Other Notes
+## Conversion Recovery
 
-* Authentication is performed using either an API key or OAuth client credentials.  It is suggested that the
-  user that creates the API key, or the OAuth client, has
-  administrative rights in Checkmarx One.  The API key or OAuth client secret can be provided on the command
-  line or read from the environment variables CX_API_KEY or CX_CLIENT_SECRET.
+* Recovery is automatic on each execution with the `convert-scms` option and when one or more recovery
+  files are found in the current working directory.
+  * The `--recovery-only` option means that the program ends after recovery is completed.
+  * The `--skip-recovery` option means that the program will not attempt to perform recovery but will
+    not remove the recovery files.
+* A completed recovery only indicates an attempt to complete conversions of the projects found
+  in the recovery file.
+    * Zero or more projects found in the recovery file may be successfully converted
+      as part of the recovery attempt.
+    * Zero or more projects found in the recovery file may fail to convert
+      as part of the recovery attempt.
+* Recovery files are not removed until all projects in the recovery files have been successfully
+  converted.
+
+## Other Notes
 
 * There is a destructive step in the conversion process that will disconnect a project from a repository
   before the project is re-connected to a new repository.  This means no scans will be orchestrated by Checkmarx One
