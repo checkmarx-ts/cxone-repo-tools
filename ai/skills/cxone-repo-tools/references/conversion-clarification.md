@@ -16,9 +16,11 @@
   such as cloning and updating `pull-request` comments or status.
 * The stored credentials are not retrievable for use outside of internal Checkmarx
   One operations.
-* When executing `convert-scms` warn of the destructive step and recovery.
-* When executing `disconnect-scm` warn of the destructive step that has no automatic recovery.
 
+## When producing examples for execution
+
+* When using `convert-scms` warn of the destructive step and recovery.
+* When using `disconnect-scm` warn of the destructive step that has no automatic recovery.
 
 ## Projects Connected to an SCM
 
@@ -79,22 +81,9 @@ to fully perform the conversion.
     is matched, the project is converted.
 
 
-## Background
-
-The purpose of SCM connection management tools is to migrate the SCM connection definition of multiple Checkmarx One projects
-to a different SCM connection definition.
-
-The connection to each SCM is identified by an `SCM ID`.  The `SCM ID` is used by Checkmarx One to understand the authentication
-method and store authentication credentials, among other data, that allows code to be retrieved from the SCM for scanning.
-
-A project that is a Code Repository import project has a Git repository in an SCM. Each Code Repository import project has an
-associated `REPO ID` that identifies, among other data items, the `SCM ID` where the repository is located.  A scan can be invoked
-from the Checkmarx One UI or on receipt of a webhook event without the need to provide credentials needed to obtain the code
-from the SCM.
-
 ## Limitations
 
-* This tool currently does not work with Cloud-hosted SCMs in Checkmarx One multi-tenant systems.  The Checkmarx One
+* SCM connection management operations currently do not work with Cloud-hosted SCMs in Checkmarx One multi-tenant systems.  The Checkmarx One
   APIs do not allow conversions for Multi-tenant Cloud SCM configurations.
 * If converting projects to an SCM that uses a GitHub App, it is a good idea to ensure the Github App is installed for
   all organizations containing conversion repositories.

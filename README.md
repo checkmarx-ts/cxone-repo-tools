@@ -1,15 +1,12 @@
 # Checkmarx One Repository Tools
 
-This is a tool that is used for managing Code Repository import projects in
-Checkmarx One.  Code repository import is used to establish a connection
-between Checkmarx One and one or more SCMs to orchestrate scans.  Each connection
-has an associated authentication method and stores the credentials to perform
-the authentication with the SCM.
+This is a tool that is used for managing various repository connections in
+Checkmarx One.
 
 At a high level, this tool is used to:
 
 * Batch change/add/remove project SCM connections.
-* Batch management of private package repository configurations assigned to projects.
+* Batch management of private package repository configurations associated to projects.
 
 To install this tool, you will need Python 3.10 or greater.
 
@@ -19,7 +16,6 @@ The `releases` section of this repo has a downloadable AI skill that can be used
 assistance with the following:
 
 * Installation of the tool.
-* Analysis of the CSV exports to plan for tool execution.
 * Commands that can be copy/pasted to execute the tool.
 
 If you are trying to understand if this tool will help with a Checkmarx One maintenance scenario,

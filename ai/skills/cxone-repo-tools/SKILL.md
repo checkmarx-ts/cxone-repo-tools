@@ -1,6 +1,6 @@
 ---
 name: cxone-repo-tools
-description: Documentation and help for using cxone-repo-tools CLI to perform Checkmarx One Code Repository project changes.
+description: Documentation and help for using cxone-repo-tools CLI for SCM and private package repository connections.
 ---
 
 # Checkmarx One Repository Tools
@@ -8,7 +8,7 @@ description: Documentation and help for using cxone-repo-tools CLI to perform Ch
 This is a Python CLI that is used to assist in maintaining the code repository
 imported projects in Checkmarx One.
 
-Reference `references/README.md` to understand basic installation instructions for `cxone-repo-tools`.
+Reference `references/README.md` to understand basic information about `cxone-repo-tools`.
 
 Reference `references/install.md` to understand:
 * The version number of the current release that generated this skill.
@@ -55,7 +55,7 @@ Reference `references/usage-clarification.md` for clarification on execution and
 of the tool that may be ambiguous when considering information from
 `references/cxone-repo-tools-docs.md`.
 
-## Use-Case #1: Produce CLI execution examples for repository authentication conversions
+## Use-Case #1: Produce CLI execution examples for repository connection management
 
 * Reference `references/conversion-clarification.md` for information about authentication conversions.
 * Reference `references/helpful-data.md` for information about data that the user can provide to assist in
