@@ -1,10 +1,12 @@
 # Helpful Data
 
-The CSV exports provided by the tool can be referenced to assist in producing CLI examples.
+The CSV exports produced by the SCM connection management commands can be referenced to assist in
+producing CLI examples.  The CSV audits produced by the SCA private package repository commands are
+described in `sca-private-package-repos.md`.
 
 ## `export-scms` data
 
-The `export-scms` option will export the SCM definition with the important fields:
+The `export-scms` command exports the SCM definition with the important fields:
 
 * `scm_id`: The `SCM ID` used as a `source` or `target` SCM for operations requiring an `SCM ID`.
 * `scm_instance_name`: A human-readable reference to the SCM connection identified by the `SCM ID`.
@@ -13,7 +15,7 @@ Explanation of the command should include the human-readable name of the SCM con
 
 ## `export-projects` data
 
-The `export-projects` option will export the project definitions for Code Repository projects
+The `export-projects` command exports the project definitions for Code Repository projects
 (no manual projects will be included) with the important fields:
 
 * All fields supplied by `export-scms` including the mentioned important fields.

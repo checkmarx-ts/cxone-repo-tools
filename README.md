@@ -1,18 +1,12 @@
 # Checkmarx One Repository Tools
 
-This is a tool that is used for managing Code Repository import projects in
-Checkmarx One.  Code repository import is used to establish a connection
-between Checkmarx One and one or more SCMs to orchestrate scans.  Each connection
-has an associated authentication method and stores the credentials to perform
-the authentication with the SCM.
+This is a tool that is used for managing various repository connections in
+Checkmarx One.
 
-At a high level, this tool does the following:
+At a high level, this tool is used to:
 
-* Dumps a list of SCM connection definitions to a CSV.
-* Dumps a list of projects with associated SCM connections to a CSV.
-* Changes the SCM connection for one or more projects to another SCM of the same type.
-* Disconnects the SCM connection for one or all projects connected to a specific SCM.
-* Establishes an SCM connection for one project not currently associated to an SCM.
+* Batch change/add/remove project SCM connections.
+* Batch management of private package repository configurations associated with projects.
 
 To install this tool, you will need Python 3.10 or greater.
 
@@ -22,8 +16,10 @@ The `releases` section of this repo has a downloadable AI skill that can be used
 assistance with the following:
 
 * Installation of the tool.
-* Analysis of the CSV exports to plan for tool execution.
 * Commands that can be copy/pasted to execute the tool.
+
+If you are trying to understand if this tool will help with a Checkmarx One maintenance scenario,
+you can ask the AI skill or contact Checkmarx Professional Services for assistance.
 
 ### Manual Installation and Execution
 
@@ -34,70 +30,6 @@ Once installed, the command line help can be accessed with the following command
 
 `cxone-repo-tools -h`
 
-This `README` covers the tool topics at a high level.  The command line help and the AI skill are
-the primary documentation.
+The command line help and the AI skill are the primary documentation for this tool.
 
-## Background
-
-The primary use for this tool is to migrate the SCM connection definition of multiple projects to a different SCM connection definition.
-
-The connection to each SCM is identified by an `SCM ID`.  The `SCM ID` is used by Checkmarx One to understand the authentication
-method and store authentication credentials, among other data, that allows code to be retrieved from the SCM for scanning.
-
-A project that is a Code Repository import project has a Git repository in an SCM. Each Code Repository import project has an
-associated `REPO ID` that identifies, among other data items, the `SCM ID` where the repository is located.  A scan can be invoked
-from the Checkmarx One UI or on receipt of a webhook event without the need to provide credentials needed to obtain the code
-from the SCM.
-
-## Limitations
-
-* This tool currently does not work with Cloud-hosted SCMs in Checkmarx One multi-tenant systems.  The Checkmarx One
-  APIs do not allow conversions for Multi-tenant Cloud SCM configurations.
-* If converting projects to an SCM that uses a GitHub App, it is a good idea to ensure the Github App is installed for
-  all organizations containing conversion repositories.
-* If the GitHub App is not installed in an organization, you can execute recovery after installing the Github App
-  in the organization.  You may need to wait several minutes before starting the recovery to allow Checkmarx One
-  to re-authenticate with the target organization.
-
-## Execution Workflow
-
-Changing the SCM connection for all projects connected to an SCM starts with obtaining one or more `source` `SCM IDs`
-and a single `target` `SCM ID`.  The CSV output options can be used to obtain lists of data that will assist in
-obtaining the required `SCM IDs`.
-
-The conversion can execute multiple times and will perform conversion on any projects found connected to any `source` SCM
-and convert them to the `target` SCM.
-
-It is suggested to pick a single work directory for executing the tool as `*.recovery.json` files are written during the
-conversion process.  These recovery files are loaded on start of the tool and executed before any processing of new
-repositories.  When all projects in a recovery file are converted, the recovery file is deleted.
-
-The recovery files have the following purpose:
-
-* To resume the conversion of a batch of projects in the event the program stops executing before 
-  a project batch is completely converted.
-* To retry projects that failed conversion if the projects need manual configuration before the
-  conversion is successful.
-
-**If there is a failure, preserve the recovery files so that disconnected repositories can be reconnected
-manually if the recovery doesn't do it automatically.  Contact Checkmarx Professional Services for assistance
-if recovery is not performed automatically.**
-
-## Other Notes
-
-* Authentication is performed using an API key.  It is suggested that the user that creates the API key has
-  administrative rights in Checkmarx One.
-
-* There is a destructive step in the conversion process that will disconnect a project from a repository
-  before the project is re-connected to a new repository.  This means no scans will be orchestrated by Checkmarx One
-  for that project until the project is re-connected to an SCM.
-
-* If the program is interrupted before a project is converted fully, the recovery process should
-  finish the conversion on the next run.
-
-* Recovery failures can happen when repositories are misconfigured or have been renamed and the stored repository
-  URL is no longer valid.  The recovery file can be modified to perform the import for the correct repository URL.
-
-* If a project is disconnected and there is no recovery file, it can be manually re-connected by providing required
-  additional parameters.
   

@@ -1,4 +1,4 @@
-import asyncio, aiofiles, aiocsv, csv
+import asyncio, aiofiles, aiocsv, csv, logging
 from pathlib import Path
 from tqdm.asyncio import tqdm
 from typing import List, Dict
@@ -10,6 +10,8 @@ from cxone_api.low.code_repository_project_conversion import (
     convert_a_project,
     retrieve_conversion_status,
 )
+
+_log = logging.getLogger(__name__)
 from cxone_api.high.projects import ProjectRepoConfig
 from .batch import ConversionBatch
 
@@ -48,18 +50,18 @@ class RecoverableConverter:
         convert_response = json_on_ok(await convert_a_project(client, payload))
         process_id = convert_response.get("processId")
 
-        print(f"\nProcess Id: {process_id} : {convert_response.get('message')}")
+        _log.info(f"Process Id: {process_id} : {convert_response.get('message')}")
 
         while True:
             status = json_on_ok(await retrieve_conversion_status(client, process_id))
 
             if status.get("migrationStatus") != "IN_PROGRESS":
-                print(
-                    f"\nProcess {process_id} complete: {status.get('migrationStatus')} {status.get('summary')}"
+                _log.info(
+                    f"Process {process_id} complete: {status.get('migrationStatus')} {status.get('summary')}"
                 )
                 return status
             else:
-                print(f"\nWaiting for migration processId {process_id} to finish.")
+                _log.debug(f"Waiting for migration processId {process_id} to finish.")
                 await asyncio.sleep(2.5)
 
     async def __process_single_batch(
@@ -83,7 +85,11 @@ class RecoverableConverter:
                 if batch.check_sast_incremental_enabled(project_id):
                     try:
                         assert await self._enable_repo_incremental(project_id)
-                    except Exception:
+                    except Exception as ex:
+                        _log.warning(
+                            f"Enabling SAST incremental scans for {converted} failed: {ex}",
+                            exc_info=True,
+                        )
                         raise ConversionException.failure_enable_sast_incrementals(
                             converted
                         )

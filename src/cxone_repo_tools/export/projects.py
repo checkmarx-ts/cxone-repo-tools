@@ -7,7 +7,7 @@ from cxone_api.low.projects import retrieve_list_of_projects
 from cxone_api.high.projects import ProjectRepoConfig
 from cxone_api.high.access_mgmt.user_mgmt import Groups
 from .scms import ScmExport
-from ..consts import MAX_RECORD_COUNT, MAX_NAMES_IN_QUERY
+from cxone_repo_tools.consts import MAX_RECORD_COUNT, MAX_NAMES_IN_QUERY
 
 
 class ProjectAssignmentExport(ScmExport):
