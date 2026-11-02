@@ -13,7 +13,7 @@ permissions:
   contents: read
 
 env:
-  PYPI_URL: https://:${{ secrets.ECHO_LIBRARIES_ACCESS_KEY }}@pypi.echohq.com/simple
+  PIP_INDEX_URL: https://:${{ secrets.ECHO_LIBRARIES_ACCESS_KEY }}@pypi.echohq.com/simple
 
 jobs:
 
@@ -35,14 +35,18 @@ jobs:
           with:
             persist-credentials: false
 
-        - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0
           with:
             python-version: ${{ matrix.pver }}
+
+        - name: Upgrade pip
+          shell: bash
+          run: |
+            pip install --upgrade pip
 
         - name: Install Pylint
           shell: bash
           run: |
-            pip config set global.index-url ${PYPI_URL}
             pip install pylint .
 
         - name: Pylint
@@ -58,7 +62,15 @@ jobs:
         - name: Check docstrings
           shell: bash
           run: |
+            set -euo pipefail
             cxone-repo-tools -h
+            commands=$(python -c 'from cxone_repo_tools.commands import command_map; print(" ".join(command_map))')
+            test -n "$commands"
+            echo "commands: $commands"
+            for cmd in $commands; do
+              echo "== cxone-repo-tools --tenant dummy --cxone-region US --api-key dummy $cmd -h"
+              cxone-repo-tools --tenant dummy --cxone-region US --api-key dummy "$cmd" -h
+            done
 
   execute-unit-tests:
     name: Unit Tests
@@ -69,13 +81,16 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0
         with:
           python-version: '3.12'
 
+      - name: Upgrade pip
+        run: |
+          pip install --upgrade pip
+
       - name: Install packages
         run: |
-          pip config set global.index-url ${PYPI_URL}
           pip install pytest .
 
       - name: Execute Unit Tests
@@ -92,13 +107,16 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0
         with:
           python-version: '3.12'
 
+      - name: Upgrade pip
+        run: |
+          pip install --upgrade pip
+
       - name: Check formatting
         run: |
-          pip config set global.index-url ${PYPI_URL}
           pip install black==26.5.1
           black --target-version py312 --check .
 

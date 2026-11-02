@@ -9,7 +9,7 @@ from cxone_api.low.code_repository_management import (
     disconnect_project_from_scm,
 )
 from cxone_api.low.projects import retrieve_list_of_projects
-from ..consts import MAX_RECORD_COUNT, MAX_NAMES_IN_QUERY
+from cxone_repo_tools.consts import MAX_RECORD_COUNT, MAX_NAMES_IN_QUERY
 
 
 class Disconnector:

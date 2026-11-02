@@ -24,7 +24,7 @@ jobs:
     name: Build Wheel
     runs-on: cx-public-ubuntu-x64
     env:
-      PYPI_URL: https://:${{ secrets.ECHO_LIBRARIES_ACCESS_KEY }}@pypi.echohq.com/simple
+      PIP_INDEX_URL: https://:${{ secrets.ECHO_LIBRARIES_ACCESS_KEY }}@pypi.echohq.com/simple
       WHL_TAG: ${{ inputs.whl_tag }}
     steps:
       - name: Fetch Code
@@ -32,9 +32,13 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0
         with:
           python-version: "3.12"
+          
+      - name: Upgrade pip
+        run: |
+          pip install --upgrade pip
 
       - name: Update version
         if: ${{ ! inputs.buildonly }}
@@ -44,7 +48,6 @@ jobs:
       - name: Build package
         run: |
           . .env
-          pip config set global.index-url ${PYPI_URL}
           pip install build
           python -m build
 
