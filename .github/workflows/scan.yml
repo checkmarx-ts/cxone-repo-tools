@@ -28,18 +28,18 @@ jobs:
       statuses: write # Need to update statuses to break build
     env:
       VIRTUALENV_NO_PERIODIC_UPDATE: 1
-      PYPI_URL: https://:${{ secrets.ECHO_LIBRARIES_ACCESS_KEY }}@pypi.echohq.com/simple
+      PIP_INDEX_URL: https://:${{ secrets.ECHO_LIBRARIES_ACCESS_KEY }}@pypi.echohq.com/simple
     steps:
       - name: Fetch Code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           persist-credentials: false
 
-      - name: Create pip.conf
-        run: |
-          mkdir -p ~/.config/pip
-          echo "[global]" > ~/.config/pip/pip.conf
-          echo "${PYPI_URL}" >> ~/.config/pip/pip.conf
+      # - name: Create pip.conf for setup action
+      #   run: |
+      #     mkdir -p ~/.config/pip
+      #     echo "[global]" > ~/.config/pip/pip.conf
+      #     echo "${PYPI_URL}" >> ~/.config/pip/pip.conf
 
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
         with:
@@ -47,6 +47,7 @@ jobs:
 
       - name: Setup Python Build Env
         run: |
+          # pip config set global.index-url ${PYPI_URL}
           pip install --upgrade pip
           pip install virtualenv
 
