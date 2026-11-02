@@ -133,6 +133,7 @@ jobs:
       - build-docs
     env:
       TAG: ${{ needs.tag-repo.outputs.tag }}
+      PIP_INDEX_URL: https://:${{ secrets.ECHO_LIBRARIES_ACCESS_KEY }}@pypi.echohq.com/simple
     steps:
       - name: Fetch Code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
@@ -148,11 +149,6 @@ jobs:
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           name: doc-skill-${{ github.run_number }}
-
-      - name: Create pip.conf
-        run: |
-          echo "[global]" > ~/.config/pip/pip.conf
-          echo "${PYPI_URL}" >> ~/.config/pip/pip.conf
 
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
         with:

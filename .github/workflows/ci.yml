@@ -13,7 +13,7 @@ permissions:
   contents: read
 
 env:
-  PYPI_URL: https://:${{ secrets.ECHO_LIBRARIES_ACCESS_KEY }}@pypi.echohq.com/simple
+  PIP_INDEX_URL: https://:${{ secrets.ECHO_LIBRARIES_ACCESS_KEY }}@pypi.echohq.com/simple
 
 jobs:
 
@@ -35,19 +35,18 @@ jobs:
           with:
             persist-credentials: false
 
-        - name: Create pip.conf
-          run: |
-            echo "[global]" > ~/.config/pip/pip.conf
-            echo "${PYPI_URL}" >> ~/.config/pip/pip.conf
-
         - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
           with:
             python-version: ${{ matrix.pver }}
 
-        - name: Install Pylint
+        - name: Upgrade pip
           shell: bash
           run: |
             pip install --upgrade pip
+
+        - name: Install Pylint
+          shell: bash
+          run: |
             pip install pylint .
 
         - name: Pylint
@@ -82,18 +81,16 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Create pip.conf
-        run: |
-          echo "[global]" > ~/.config/pip/pip.conf
-          echo "${PYPI_URL}" >> ~/.config/pip/pip.conf
-
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
         with:
           python-version: '3.12'
 
-      - name: Install packages
+      - name: Upgrade pip
         run: |
           pip install --upgrade pip
+
+      - name: Install packages
+        run: |
           pip install pytest .
 
       - name: Execute Unit Tests
@@ -110,18 +107,16 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Create pip.conf
-        run: |
-          echo "[global]" > ~/.config/pip/pip.conf
-          echo "${PYPI_URL}" >> ~/.config/pip/pip.conf
-
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
         with:
           python-version: '3.12'
 
-      - name: Check formatting
+      - name: Upgrade pip
         run: |
           pip install --upgrade pip
+
+      - name: Check formatting
+        run: |
           pip install black==26.5.1
           black --target-version py312 --check .
 
