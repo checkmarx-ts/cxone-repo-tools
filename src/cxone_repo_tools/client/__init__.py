@@ -1,5 +1,7 @@
+from __future__ import annotations
 import os
-from typing import Dict, Tuple
+from typing import Dict, FrozenSet, Tuple
+from urllib.parse import urlsplit
 from cxone_api import (
     ApiRegionEndpoints,
     AuthRegionEndpoints,
@@ -15,9 +17,62 @@ def mt_endpoints() -> str:
     return ",".join(sorted(ApiRegionEndpoints.keys()))
 
 
+def _hostname(url: str) -> str | None:
+    host = urlsplit(url).hostname
+    return host.lower() if host is not None else None
+
+
+def _regional_hostnames() -> FrozenSet[str]:
+    """The IAM and API hostnames of every well-known multi-tenant region."""
+    hosts = set()
+    for region in ApiRegionEndpoints.values():
+        hosts.add(_hostname(str(region())))
+    for region in AuthRegionEndpoints.values():
+        hosts.add(_hostname(str(region("tenant"))))
+    hosts.discard(None)
+    return frozenset(hosts)
+
+
+class CxOneRepoToolsClient(CxOneClient):
+    """A CxOneClient that also reports whether it is connected to a
+    single-tenant Checkmarx One deployment.
+
+    cxone-async-api's CxOneClient factory methods are static and always
+    construct a CxOneClient, so the instances they return are re-classed
+    as CxOneRepoToolsClient rather than constructed directly."""
+
+    __REGIONAL_HOSTNAMES = _regional_hostnames()
+
+    @staticmethod
+    def __adopt(client: CxOneClient) -> CxOneRepoToolsClient:
+        client.__class__ = CxOneRepoToolsClient
+        return client
+
+    @staticmethod
+    def create_with_oauth(*args, **kwargs) -> CxOneRepoToolsClient:
+        return CxOneRepoToolsClient.__adopt(
+            CxOneClient.create_with_oauth(*args, **kwargs)
+        )
+
+    @staticmethod
+    def create_with_api_key(*args, **kwargs) -> CxOneRepoToolsClient:
+        return CxOneRepoToolsClient.__adopt(
+            CxOneClient.create_with_api_key(*args, **kwargs)
+        )
+
+    @property
+    def is_single_tenant(self) -> bool:
+        """True when the client connects to an FQDN hostname that is not the
+        hostname of any regional multi-tenant moniker."""
+        return (
+            _hostname(self.api_endpoint)
+            not in CxOneRepoToolsClient.__REGIONAL_HOSTNAMES
+        )
+
+
 class CxOneClientFactory:
-    """Builds a CxOneClient from command line options, authenticating with
-    either an API key or OAuth client credentials."""
+    """Builds a CxOneRepoToolsClient from command line options, authenticating
+    with either an API key or OAuth client credentials."""
 
     API_KEY_ENV = "CX_API_KEY"
     CLIENT_SECRET_ENV = "CX_CLIENT_SECRET"
@@ -61,12 +116,12 @@ class CxOneClientFactory:
         proxy: Dict[str, str] | None,
         ssl_verify: bool,
         retries: int,
-    ) -> CxOneClient:
+    ) -> CxOneRepoToolsClient:
         key = CxOneClientFactory.__secret(
             api_key, apikey_in_env, CxOneClientFactory.API_KEY_ENV, "API Key"
         )
 
-        return CxOneClient.create_with_api_key(
+        return CxOneRepoToolsClient.create_with_api_key(
             key,
             AGENT,
             auth_endpoint,
@@ -86,7 +141,7 @@ class CxOneClientFactory:
         proxy: Dict[str, str] | None,
         ssl_verify: bool,
         retries: int,
-    ) -> CxOneClient:
+    ) -> CxOneRepoToolsClient:
         secret = CxOneClientFactory.__secret(
             oauth_client_secret,
             secret_in_env,
@@ -94,7 +149,7 @@ class CxOneClientFactory:
             "OAuth client secret",
         )
 
-        return CxOneClient.create_with_oauth(
+        return CxOneRepoToolsClient.create_with_oauth(
             oauth_client_id,
             secret,
             AGENT,
@@ -118,8 +173,8 @@ class CxOneClientFactory:
         proxy_url: str | None,
         ssl_verify: bool,
         retries: int,
-    ) -> CxOneClient:
-        """Creates a CxOneClient. OAuth client credentials are used when
+    ) -> CxOneRepoToolsClient:
+        """Creates a CxOneRepoToolsClient. OAuth client credentials are used when
         oauth_client_id is provided, otherwise an API key is used."""
 
         auth_endpoint, api_endpoint = CxOneClientFactory.__endpoints(
