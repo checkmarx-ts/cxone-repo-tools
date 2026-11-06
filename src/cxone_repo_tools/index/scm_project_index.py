@@ -6,7 +6,7 @@ from cxone_api.low.code_repository_management import retrieve_list_of_scms
 from cxone_api.high.projects import ProjectRepoConfig
 
 
-class AbstractScmProjectIndex:
+class ScmProjectIndex:
     """Base class for an index of SCM-connected projects.  Subclasses must
     implement `associated_projects`.
 
@@ -73,4 +73,4 @@ class AbstractScmProjectIndex:
         :raises NotImplementedError: The subclass does not implement this
                                      method.
         """
-        raise NotImplementedError(AbstractScmProjectIndex.associated_projects.__name__)
+        raise NotImplementedError(ScmProjectIndex.associated_projects.__name__)

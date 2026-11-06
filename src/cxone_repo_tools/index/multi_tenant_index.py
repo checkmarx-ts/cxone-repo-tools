@@ -5,10 +5,10 @@ from cxone_api.low.projects import retrieve_list_of_projects
 from cxone_api.util import page_generator
 from cxone_repo_tools.client import CxOneRepoToolsClient
 from cxone_repo_tools.consts import MAX_RECORD_COUNT
-from .scm_project_index import AbstractScmProjectIndex
+from .scm_project_index import ScmProjectIndex
 
 
-class MultiTenantIndex(AbstractScmProjectIndex):
+class MultiTenantIndex(ScmProjectIndex):
     """An index of SCM-connected projects for a multi-tenant Checkmarx One
     region.
 

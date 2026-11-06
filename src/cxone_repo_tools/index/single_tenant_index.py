@@ -1,7 +1,7 @@
 from asyncio import Lock, gather
 from typing import List, AsyncGenerator
 from cxone_repo_tools.client import CxOneRepoToolsClient
-from .scm_project_index import AbstractScmProjectIndex
+from .scm_project_index import ScmProjectIndex
 from cxone_api.low.code_repository_management import retrieve_scm_projects
 from cxone_api.low.projects import retrieve_list_of_projects
 from cxone_api.util import page_generator
@@ -9,7 +9,7 @@ from cxone_api.high.projects import ProjectRepoConfig
 from cxone_repo_tools.consts import MAX_RECORD_COUNT, MAX_NAMES_IN_QUERY
 
 
-class SingleTenantIndex(AbstractScmProjectIndex):
+class SingleTenantIndex(ScmProjectIndex):
     """An index of SCM-connected projects for a single-tenant Checkmarx One
     deployment.
 

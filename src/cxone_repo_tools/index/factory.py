@@ -1,5 +1,5 @@
 from cxone_repo_tools.client import CxOneRepoToolsClient
-from .scm_project_index import AbstractScmProjectIndex
+from .scm_project_index import ScmProjectIndex
 from .single_tenant_index import SingleTenantIndex
 from .multi_tenant_index import MultiTenantIndex
 
@@ -10,7 +10,7 @@ class ScmProjectIndexFactory:
     @staticmethod
     def create_index(
         client: CxOneRepoToolsClient, *, threads: int = 2
-    ) -> AbstractScmProjectIndex:
+    ) -> ScmProjectIndex:
         """Creates an SCM project index for the deployment the client is
         connected to.
 
