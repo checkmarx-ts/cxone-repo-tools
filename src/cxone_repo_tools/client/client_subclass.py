@@ -103,4 +103,5 @@ class CxOneRepoToolsClient(CxOneClient):
 
         :rtype: bool
         """
-        return self.__single_tenant
+        # Set by __adopt, which pylint cannot see as defining the member.
+        return self.__single_tenant  # pylint: disable=no-member
