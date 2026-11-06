@@ -1,6 +1,5 @@
 from docopt import docopt, ParsedOptions
 from typing import List, Coroutine
-from cxone_api import CxOneClient
 from cxone_repo_tools.commands.base import Command
 from cxone_repo_tools.convert import (
     AbortedConversionException,
