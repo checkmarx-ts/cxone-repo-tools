@@ -9,7 +9,7 @@ from cxone_api.high.sca.registry import (
     PackageManagerType,
 )
 from cxone_api.high.scan_configuration import ProjectScanConfiguration
-from cxone_repo_tools.convert import InvalidRepositoryConfiguration
+from cxone_repo_tools.exceptions import InvalidRepositoryConfiguration
 
 
 async def resolve_tag(

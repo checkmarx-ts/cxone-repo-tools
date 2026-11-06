@@ -2,7 +2,7 @@ import asyncio, aiofiles, aiocsv, csv, logging
 from pathlib import Path
 from tqdm.asyncio import tqdm
 from typing import List, Dict
-from .exceptions import ConversionException
+from cxone_repo_tools.exceptions import ConversionException
 from cxone_repo_tools.client import CxOneRepoToolsClient
 from cxone_api.util import json_on_ok
 from cxone_api.low.code_repository_management import disconnect_project_from_scm

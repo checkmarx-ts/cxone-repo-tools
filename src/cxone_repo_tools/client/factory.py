@@ -8,7 +8,7 @@ from cxone_api import (
     CxOneAuthEndpoint,
 )
 from cxone_repo_tools import AGENT
-from cxone_repo_tools.convert.exceptions import AbortedConversionException
+from cxone_repo_tools.exceptions import AbortedConversionException
 from .client_subclass import CxOneRepoToolsClient
 
 

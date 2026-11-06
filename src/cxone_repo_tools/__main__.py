@@ -3,7 +3,7 @@ from docopt import docopt, DocoptExit
 from . import AGENT
 from .client import mt_endpoints, CxOneClientFactory
 from .log import configure_logging
-from .convert import (
+from .exceptions import (
     ConversionException,
     AbortedConversionException,
     InvalidRepositoryConfiguration,

@@ -7,7 +7,7 @@ from cxone_api.low.sca.registry.tags import retrieve_list_of_configurations_by_t
 from cxone_api.high.sca.registry import PackageRepositoryConfigurationTag
 from cxone_repo_tools.commands.base import Command
 from .util import PACKAGE_MANAGERS
-from cxone_repo_tools.convert import AbortedConversionException
+from cxone_repo_tools.exceptions import AbortedConversionException
 
 
 class AuditTagsCommand(Command):
