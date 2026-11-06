@@ -46,7 +46,13 @@ class ScmProjectIndex:
         await self.__index_scms()
         return self.__scm_index.get(scm_id)
 
-    async def _get_scm_ids(self) -> List[int]:
+    async def get_scm_ids(self) -> List[int]:
+        """Retrieves the IDs of every SCM configured in the tenant.  The SCM
+        list is retrieved on the first call and cached afterwards.
+
+        :return: The SCM IDs.
+        :rtype: List[int]
+        """
         await self.__index_scms()
         return list(self.__scm_index.keys())
 

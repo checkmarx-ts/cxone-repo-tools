@@ -1,12 +1,34 @@
 import asyncio, aiofiles, aiocsv, csv
 from typing import List
 from cxone_repo_tools.client import CxOneRepoToolsClient
+from cxone_repo_tools.index import ScmProjectIndex, ScmProjectIndexFactory
 
 
 class BaseExport:
+    """Base class for exports that write SCM data to a CSV file.
+
+    :param client: The client used to make Checkmarx One API calls.
+    :type client: CxOneRepoToolsClient
+
+    :param threads: The maximum number of concurrent operations.  Defaults
+                    to 2.
+    :type threads: int, optional
+    """
+
     def __init__(self, client: CxOneRepoToolsClient, *, threads: int = 2):
+        """Initializes the export and creates the SCM project index that
+        matches the deployment the client is connected to.
+
+        :param client: The client used to make Checkmarx One API calls.
+        :type client: CxOneRepoToolsClient
+
+        :param threads: The maximum number of concurrent operations.
+                        Defaults to 2.
+        :type threads: int, optional
+        """
         self.__client = client
         self.__threads = asyncio.Semaphore(threads)
+        self.__index = ScmProjectIndexFactory.create_index(client, threads=threads)
 
     @property
     def _thread_semaphore(self) -> asyncio.Semaphore:
@@ -15,6 +37,14 @@ class BaseExport:
     @property
     def _client(self) -> CxOneRepoToolsClient:
         return self.__client
+
+    @property
+    def _index(self) -> ScmProjectIndex:
+        """The index of SCMs and the projects connected to them.
+
+        :rtype: ScmProjectIndex
+        """
+        return self.__index
 
     async def _prep_for_export(self):
         raise NotImplementedError("_prep_for_export")

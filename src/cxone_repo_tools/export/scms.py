@@ -1,20 +1,17 @@
-import asyncio, aiocsv
+import aiocsv
 from typing import List, Dict
-from cxone_api.util import json_on_ok
-from cxone_api.low.code_repository_management import retrieve_list_of_scms
 from .base import BaseExport
 
 
 class ScmExport(BaseExport):
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        self.__scm_index = None
-        self.__scm_index_lock = asyncio.Lock()
+    """Exports the SCMs configured in the tenant to a CSV file, using the SCM
+    data held by the export's SCM project index."""
 
     async def _prep_for_export(self):
-        await self.__index_scms()
+        """Retrieves the SCM list into the index before the CSV file is
+        opened, so a retrieval failure does not leave an empty export.
+        """
+        await self._index.get_scm_ids()
 
     @property
     def _field_names(self) -> List[str]:
@@ -26,28 +23,6 @@ class ScmExport(BaseExport):
             "scm_self_hosted",
         ]
 
-    async def _get_scm_ids(self) -> List[int]:
-        if self.__scm_index is None:
-            await self.__index_scms()
-
-        return list(self.__scm_index.keys())
-
-    async def _get_scm_data(self, scm_id: int) -> Dict | None:
-        if self.__scm_index is None:
-            await self.__index_scms()
-
-        return self.__scm_index.get(scm_id)
-
-    async def __index_scms(self):
-        async with self.__scm_index_lock:
-            if self.__scm_index is not None:
-                return
-            else:
-                self.__scm_index = {}
-
-            for scm in json_on_ok(await retrieve_list_of_scms(self._client)):
-                self.__scm_index[scm.get("id")] = scm
-
     async def _generate_row(self, scm_dict: Dict) -> Dict:
         return {
             "scm_id": scm_dict.get("id"),
@@ -58,5 +33,11 @@ class ScmExport(BaseExport):
         }
 
     async def _write_rows(self, writer: aiocsv.AsyncDictWriter) -> None:
-        for scm in self.__scm_index.values():
+        """Writes one row for each SCM in the index.
+
+        :param writer: The CSV writer.
+        :type writer: aiocsv.AsyncDictWriter
+        """
+        for scm_id in await self._index.get_scm_ids():
+            scm = await self._index.get_scm_data(scm_id)
             await writer.writerow(await self._generate_row(scm))

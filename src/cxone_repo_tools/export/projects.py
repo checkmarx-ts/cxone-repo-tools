@@ -1,23 +1,25 @@
 import asyncio, aiocsv
 from tqdm.asyncio import tqdm
 from typing import List, Dict
-from cxone_api.util import page_generator
-from cxone_api.low.code_repository_management import retrieve_scm_projects
-from cxone_api.low.projects import retrieve_list_of_projects
 from cxone_api.high.projects import ProjectRepoConfig
 from cxone_api.high.access_mgmt.user_mgmt import Groups
 from .scms import ScmExport
-from cxone_repo_tools.consts import MAX_RECORD_COUNT, MAX_NAMES_IN_QUERY
 
 
 class ProjectAssignmentExport(ScmExport):
+    """Exports the projects connected to each SCM to a CSV file, using the
+    export's SCM project index to find the projects for each SCM."""
 
     def __init__(self, *args, **kwargs):
+        """Initializes the export.  Arguments are passed to `ScmExport`.
+
+        :param args: Positional arguments passed to `ScmExport`.
+        :param kwargs: Keyword arguments passed to `ScmExport`.
+        """
         super().__init__(*args, **kwargs)
-        self.__project_data_generator_by_scm_index = {}
-        self.__scm_project_name_index = {}
-        self.__scm_project_name_index_lock = asyncio.Lock()
         self.__groups = Groups(self._client)
+        # aiocsv writers are not safe for concurrent writerow calls.
+        self.__write_lock = asyncio.Lock()
 
     @property
     def _field_names(self) -> List[str]:
@@ -36,61 +38,19 @@ class ProjectAssignmentExport(ScmExport):
             "project_groups",
         ]
 
-    async def __index_projects_assigned_to_scm(self, scm_id: int):
-        async with self._thread_semaphore:
-            async for project in page_generator(
-                retrieve_scm_projects,
-                "projects",
-                client=self._client,
-                scmid=scm_id,
-                limit=MAX_RECORD_COUNT,
-            ):
-                async with self.__scm_project_name_index_lock:
-                    if scm_id not in self.__scm_project_name_index.keys():
-                        self.__scm_project_name_index[scm_id] = []
-
-                    self.__scm_project_name_index[scm_id].append(project)
-
-    async def __index_scm_projects(self):
-        await asyncio.gather(
-            *[
-                self.__index_projects_assigned_to_scm(id)
-                for id in await self._get_scm_ids()
-            ]
-        )
-
-        # Make a generator for the project data to avoid
-        # trying to load a lot of data in memory.
-
-        # The name parameters may be many, so there needs
-        # to be multiple generators.
-        for scm_id in self.__scm_project_name_index.keys():
-            generators = []
-
-            names = self.__scm_project_name_index[scm_id].copy()
-
-            while len(names) > 0:
-
-                generators.append(
-                    page_generator(
-                        retrieve_list_of_projects,
-                        "projects",
-                        client=self._client,
-                        limit=MAX_RECORD_COUNT,
-                        names=names[:MAX_NAMES_IN_QUERY],
-                    )
-                )
-                del names[:MAX_NAMES_IN_QUERY]
-
-            if len(generators) > 0:
-                self.__project_data_generator_by_scm_index[scm_id] = generators
-
-    async def _prep_for_export(self):
-        await super()._prep_for_export()
-        await self.__index_scm_projects()
-
     async def _generate_row(self, scm_id: int, repo_cfg: ProjectRepoConfig) -> Dict:
-        row = await super()._generate_row(await self._get_scm_data(scm_id))
+        """Generates the CSV row for a project connected to an SCM.
+
+        :param scm_id: The ID of the SCM the project is connected to.
+        :type scm_id: int
+
+        :param repo_cfg: The project's repository configuration.
+        :type repo_cfg: ProjectRepoConfig
+
+        :return: The CSV row, keyed by field name.
+        :rtype: Dict
+        """
+        row = await super()._generate_row(await self._index.get_scm_data(scm_id))
         groups = ""
         if repo_cfg.groups is not None and len(repo_cfg.groups) > 0:
             group_list = []
@@ -124,20 +84,32 @@ class ProjectAssignmentExport(ScmExport):
         return row
 
     async def __write_rows_for_scm(self, scm_id: int, writer: aiocsv.AsyncDictWriter):
+        """Writes one row for each project connected to an SCM.
+
+        :param scm_id: The ID of the SCM.
+        :type scm_id: int
+
+        :param writer: The CSV writer.
+        :type writer: aiocsv.AsyncDictWriter
+        """
+        repo_cfgs = await self._index.associated_projects(scm_id)
         async with self._thread_semaphore:
-            for generator in self.__project_data_generator_by_scm_index[scm_id]:
-                async for project_json in generator:
-                    repo_cfg = await ProjectRepoConfig.from_project_json(
-                        self._client, project_json
-                    )
-                    row = await self._generate_row(scm_id, repo_cfg)
+            for repo_cfg in repo_cfgs:
+                row = await self._generate_row(scm_id, repo_cfg)
+                async with self.__write_lock:
                     await writer.writerow(row)
 
     async def _write_rows(self, writer: aiocsv.AsyncDictWriter) -> None:
+        """Writes the rows for the projects connected to every SCM in the
+        index.
+
+        :param writer: The CSV writer.
+        :type writer: aiocsv.AsyncDictWriter
+        """
         await tqdm.gather(
             *[
-                self.__write_rows_for_scm(id, writer)
-                for id in self.__project_data_generator_by_scm_index.keys()
+                self.__write_rows_for_scm(scm_id, writer)
+                for scm_id in await self._index.get_scm_ids()
             ],
             desc="Exporting data",
         )

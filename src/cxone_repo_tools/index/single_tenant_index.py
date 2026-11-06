@@ -50,7 +50,7 @@ class SingleTenantIndex(ScmProjectIndex):
             await gather(
                 *[
                     self.__index_projects_assigned_to_scm(id)
-                    for id in await self._get_scm_ids()
+                    for id in await self.get_scm_ids()
                 ]
             )
 
