@@ -1,7 +1,7 @@
 from tqdm.asyncio import tqdm
 from typing import List, AsyncGenerator
 from .exceptions import ConversionException
-from cxone_api import CxOneClient
+from cxone_repo_tools.client import CxOneRepoToolsClient
 from cxone_api.util import json_on_ok, page_generator
 from cxone_api.low.code_repository_management import (
     retrieve_list_of_scms,
@@ -21,7 +21,7 @@ class BatchConverter(RecoverableConverter):
 
     def __init__(
         self,
-        client: CxOneClient,
+        client: CxOneRepoToolsClient,
         source_ids: List[int],
         target_id: int,
         report_path: str,

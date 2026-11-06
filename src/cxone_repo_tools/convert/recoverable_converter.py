@@ -3,7 +3,7 @@ from pathlib import Path
 from tqdm.asyncio import tqdm
 from typing import List, Dict
 from .exceptions import ConversionException
-from cxone_api import CxOneClient
+from cxone_repo_tools.client import CxOneRepoToolsClient
 from cxone_api.util import json_on_ok
 from cxone_api.low.code_repository_management import disconnect_project_from_scm
 from cxone_api.low.code_repository_project_conversion import (
@@ -25,7 +25,7 @@ class RecoverableConverter:
 
     def __init__(
         self,
-        client: CxOneClient,
+        client: CxOneRepoToolsClient,
         report_path: str,
         threads: int = 2,
     ):
@@ -45,7 +45,9 @@ class RecoverableConverter:
         return await repo_cfg.update_repository_toggles(sastIncrementalScan=True)
 
     @staticmethod
-    async def convert_project_and_wait(client: CxOneClient, payload: Dict) -> Dict:
+    async def convert_project_and_wait(
+        client: CxOneRepoToolsClient, payload: Dict
+    ) -> Dict:
 
         convert_response = json_on_ok(await convert_a_project(client, payload))
         process_id = convert_response.get("processId")

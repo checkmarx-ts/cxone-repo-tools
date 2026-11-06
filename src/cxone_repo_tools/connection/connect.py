@@ -1,6 +1,6 @@
 from typing import List
 from cxone_repo_tools.convert import BatchConverter
-from cxone_api import CxOneClient
+from cxone_repo_tools.client import CxOneRepoToolsClient
 from cxone_api.util import json_on_ok
 from cxone_api.low.repos_manager import get_scm_by_id
 from cxone_api.low.projects import retrieve_project_info
@@ -11,7 +11,7 @@ class Connector:
 
     @staticmethod
     async def connect(
-        client: CxOneClient,
+        client: CxOneRepoToolsClient,
         scm_id: int,
         project_id: str,
         org: str,

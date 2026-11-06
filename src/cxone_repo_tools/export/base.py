@@ -1,10 +1,10 @@
 import asyncio, aiofiles, aiocsv, csv
 from typing import List
-from cxone_api import CxOneClient
+from cxone_repo_tools.client import CxOneRepoToolsClient
 
 
 class BaseExport:
-    def __init__(self, client: CxOneClient, *, threads: int = 2):
+    def __init__(self, client: CxOneRepoToolsClient, *, threads: int = 2):
         self.__client = client
         self.__threads = asyncio.Semaphore(threads)
 
@@ -13,7 +13,7 @@ class BaseExport:
         return self.__threads
 
     @property
-    def _client(self) -> CxOneClient:
+    def _client(self) -> CxOneRepoToolsClient:
         return self.__client
 
     async def _prep_for_export(self):
