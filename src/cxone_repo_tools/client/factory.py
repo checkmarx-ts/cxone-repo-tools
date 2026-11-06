@@ -227,7 +227,7 @@ class CxOneClientFactory:
         proxy_url: str | None,
         ssl_verify: bool,
         retries: int,
-    ) -> CxOneRepoToolsClient:
+    ) -> CxOneRepoToolsClient | None:
         """Creates a CxOneRepoToolsClient. OAuth client credentials are used when
         oauth_client_id is provided, otherwise an API key is used.
 
@@ -269,7 +269,7 @@ class CxOneClientFactory:
 
         :return: The client, or None if neither OAuth client credentials nor
                  an API key are supplied.
-        :rtype: CxOneRepoToolsClient
+        :rtype: CxOneRepoToolsClient | None
 
         :raises AbortedConversionException: The selected secret is missing or
                                             empty.
