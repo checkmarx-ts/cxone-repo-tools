@@ -1,16 +1,14 @@
 from tqdm.asyncio import tqdm
 from typing import List, AsyncGenerator
-from .exceptions import ConversionException
+from cxone_repo_tools.exceptions import ConversionException
 from cxone_repo_tools.client import CxOneRepoToolsClient
-from cxone_api.util import json_on_ok, page_generator
-from cxone_api.low.code_repository_management import (
-    retrieve_list_of_scms,
-    retrieve_scm_projects,
-)
+from cxone_api.util import page_generator
+from cxone_api.low.code_repository_management import retrieve_scm_projects
 from cxone_api.low.projects import retrieve_list_of_projects
 from cxone_api.high.projects import ProjectRepoConfig
 from cxone_api.high.misc import FeatureFlagInspector
 from cxone_repo_tools.consts import MAX_RECORD_COUNT, DISCO_API_FLAG, MAX_NAMES_IN_QUERY
+from cxone_repo_tools.index import ScmProjectIndexFactory
 from .batch import ConversionBatch
 from .recoverable_converter import RecoverableConverter
 
@@ -27,14 +25,47 @@ class BatchConverter(RecoverableConverter):
         report_path: str,
         threads: int = 2,
     ):
+        """Initializes the converter and creates the SCM project index that
+        matches the deployment the client is connected to.
+
+        :param client: The client used to make Checkmarx One API calls.
+        :type client: CxOneRepoToolsClient
+
+        :param source_ids: The IDs of the SCMs whose projects are converted.
+        :type source_ids: List[int]
+
+        :param target_id: The ID of the SCM the projects are converted to.
+        :type target_id: int
+
+        :param report_path: The path of the conversion report file.
+        :type report_path: str
+
+        :param threads: The maximum number of concurrent operations.
+                        Defaults to 2.
+        :type threads: int, optional
+        """
         super().__init__(client, report_path, threads)
 
         self.__source_ids = source_ids
         self.__target_id = target_id
+        self.__index = ScmProjectIndexFactory.create_index(client, threads=threads)
 
         self.__scm_data = {}
 
     async def __validate_conversion(self, override_url_mismatch: bool):
+        """Validates that a conversion can run: the disconnect API feature
+        flag is enabled, the source and target SCMs exist in the index, each
+        source SCM type is compatible with the target SCM type, and, unless
+        overridden, all the SCMs share a repository base URL.  The data of
+        the source and target SCMs is retained for the conversion.
+
+        :param override_url_mismatch: True to skip the check that the source
+                                      and target SCMs share a repository base
+                                      URL.
+        :type override_url_mismatch: bool
+
+        :raises ConversionException: The conversion cannot run.
+        """
         flag_insp = await FeatureFlagInspector.create(self._client)
 
         if flag_insp[DISCO_API_FLAG] is None or not flag_insp[DISCO_API_FLAG].Status:
@@ -46,7 +77,8 @@ class BatchConverter(RecoverableConverter):
 
         base_urls = {}
 
-        for scm in json_on_ok(await retrieve_list_of_scms(self._client)):
+        for scm_id in await self.__index.get_scm_ids():
+            scm = await self.__index.get_scm_data(scm_id)
             base_urls[int(scm.get("id"))] = scm.get("repoBaseUrl")
 
             add = False
