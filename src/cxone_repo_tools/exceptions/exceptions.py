@@ -125,3 +125,28 @@ class InvalidRepositoryConfiguration(Exception):
             f"configuration: {', '.join(config_ids)}. Resolve the duplicate before "
             "updating the tag."
         )
+
+
+class MappingException(Exception):
+    """Raised when a value cannot be mapped during a conversion."""
+
+    @staticmethod
+    def missing_extracted_values(
+        input_string: str, missing: List[str]
+    ) -> MappingException:
+        """Creates the exception raised when an input string does not yield
+        every extracted value that a substitution specification references.
+
+        :param input_string: The input string the regex was evaluated against.
+        :type input_string: str
+
+        :param missing: The names of the referenced values that were not
+                        extracted.
+        :type missing: List[str]
+
+        :rtype: MappingException
+        """
+        return MappingException(
+            f"Input [{input_string}] did not yield the extracted values: "
+            f"{', '.join(missing)}"
+        )
