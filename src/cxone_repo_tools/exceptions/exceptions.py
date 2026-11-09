@@ -92,6 +92,25 @@ class InvalidRepositoryConfiguration(Exception):
         )
 
     @staticmethod
+    def config_not_retrieved(
+        config_id: str, reason: str
+    ) -> InvalidRepositoryConfiguration:
+        """Creates the exception raised when a configuration cannot be
+        retrieved, for example because no configuration has the ID.
+
+        :param config_id: The ID of the configuration.
+        :type config_id: str
+
+        :param reason: The reason the retrieval failed.
+        :type reason: str
+
+        :rtype: InvalidRepositoryConfiguration
+        """
+        return InvalidRepositoryConfiguration(
+            f"Configuration {config_id} could not be retrieved: {reason}"
+        )
+
+    @staticmethod
     def no_package_manager_configs() -> InvalidRepositoryConfiguration:
         return InvalidRepositoryConfiguration(
             "At least one package manager configuration file must be provided."

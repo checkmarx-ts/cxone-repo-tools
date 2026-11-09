@@ -78,6 +78,11 @@ assignment scope.
 * The command that purges a tag removes those SCA file exclusions from the associated
   projects, deletes the tag's configurations, and then deletes the tag.  Deleting a
   configuration removes it from every project it is associated with.
+* The command that deletes a single configuration removes the SCA file exclusion for the
+  configuration's file from its associated projects and then deletes the configuration.
+  Deleting the configuration automatically removes its associations with every project
+  and tag.  A tag that contained the configuration no longer has a configuration for that
+  package manager type; use the update command to add one again.
 * The command that disassociates a tag's configurations from a single project removes
   the SCA file exclusions for those configurations from that project's settings and then
   removes the associations.  The configurations and the tag are not changed.  Use it to
@@ -190,6 +195,12 @@ processed in the same run.  Recovery depends on the command:
   exclusions.  If a project settings write failed and the purge then completed, the
   leftover exclusion filters for that project must be removed through the project's scan
   settings, since the tag no longer exists for the tool to act on.
+
+* **Delete configuration command**: re-run the same command while the configuration still
+  exists.  Because exclusions are removed before the configuration is deleted, a failure
+  leaves projects reading repository configuration files while the configuration still
+  exists; if the user decides to keep the configuration, re-run the association command for
+  a tag that contains it to restore the exclusions.
 
 The project audit can be used at any time to confirm the resulting state.
 
