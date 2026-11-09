@@ -82,17 +82,16 @@ class BatchConverter(RecoverableConverter):
             base_urls[int(scm.get("id"))] = scm.get("repoBaseUrl")
 
             add = False
-            id = str(scm.get("id"))
-            if id in self.__source_ids:
+            if scm_id in self.__source_ids:
                 source_map[id] = scm.get("type")
                 add = True
-            elif id == self.__target_id:
+            elif scm_id == self.__target_id:
                 target_id_found = True
                 target_type = scm.get("type")
                 add = True
 
             if add:
-                self.__scm_data[scm.get("id")] = scm
+                self.__scm_data[scm_id] = scm
 
         if not target_id_found:
             raise ConversionException.target_scm_not_found(self.__target_id)
@@ -103,6 +102,8 @@ class BatchConverter(RecoverableConverter):
         if len(missing_sources) > 0:
             raise ConversionException.source_scms_not_found(missing_sources)
 
+        # TODO: Need to change this to only apply when a repo mapping is not
+        # supplied.
         for source_id in source_map.keys():
             if source_map[source_id] not in BatchConverter.__COMPATIBLE_MAP.get(
                 target_type, []
@@ -111,6 +112,7 @@ class BatchConverter(RecoverableConverter):
                     source_id, source_map[source_id], self.__target_id, target_type
                 )
 
+        # TODO: This will also change when mapping to a different SCM
         if not override_url_mismatch:
             repo_base_urls = set(
                 [scm_data.get("repoBaseUrl") for scm_data in self.__scm_data.values()]
@@ -210,7 +212,7 @@ class BatchConverter(RecoverableConverter):
         data_gen_lists = await tqdm.gather(
             *[
                 self.__get_scm_project_generators(id, single_project=project_id)
-                for id in self.__scm_data.keys()
+                for id in self.__index.get_scm_ids()
                 if id != int(self.__target_id)
             ],
             desc="Gathering projects",
