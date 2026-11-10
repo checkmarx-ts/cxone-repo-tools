@@ -46,11 +46,7 @@ class BaseExport:
         """
         return self.__index
 
-    async def _prep_for_export(self):
-        raise NotImplementedError("_prep_for_export")
-
     async def export(self, export_csv_file: str) -> None:
-        await self._prep_for_export()
         await self.__write_csv(export_csv_file)
 
     @property

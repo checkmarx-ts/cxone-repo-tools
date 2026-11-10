@@ -7,12 +7,6 @@ class ScmExport(BaseExport):
     """Exports the SCMs configured in the tenant to a CSV file, using the SCM
     data held by the export's SCM project index."""
 
-    async def _prep_for_export(self):
-        """Retrieves the SCM list into the index before the CSV file is
-        opened, so a retrieval failure does not leave an empty export.
-        """
-        await self._index.get_scm_ids()
-
     @property
     def _field_names(self) -> List[str]:
         return [
