@@ -1,6 +1,8 @@
 {
   "2.1.0" : [
-    "Added a command to delete a private package repository configuration."
+    "Added a command to delete a private package repository configuration.",
+    "Minimum Python version supported is now 3.11",
+    "Project migration is now possible across different SCM types."
   ],
   "2.0.0" : [
     "Command line usage revamped.  Review the command line help or use the AI skill to translate old syntax to the new syntax.",
