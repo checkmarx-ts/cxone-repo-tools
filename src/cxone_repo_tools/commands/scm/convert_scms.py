@@ -1,3 +1,4 @@
+import os
 from docopt import docopt, ParsedOptions
 from typing import List, Coroutine
 from cxone_repo_tools.commands.base import Command
@@ -7,6 +8,10 @@ from cxone_repo_tools.convert import (
     RecoverableConverter,
     NameFilterConverter,
     GroupFilterConverter,
+)
+from cxone_repo_tools.convert.mapping import (
+    DefaultConversionMapper,
+    SubstituteConversionMapper,
 )
 
 
@@ -20,8 +25,12 @@ class ConvertScmsCommand(Command):
                         [--skip-recovery]
                         [--project-id PROJECTID | --project-name-match REGEX | --project-group-match REGEX]
                         [--regex-ignore-case]
-                        --target-id TARGETID --source-id SOURCEIDS...
+                        [(--map-fields FIELDREGEX --map-target-repo SUBSPEC)]
+                        [--token TOKEN | --token-env]
+                        --target-id TARGETID --target-org ORGNAME
+                        --source-id SOURCEIDS...
         cxone-repo-tools convert-scms
+                        [--token TOKEN | --token-env]
                         [--report REPORT_FILE]
                         --recovery-only
 
@@ -35,14 +44,27 @@ class ConvertScmsCommand(Command):
     --target-id TARGETID          Target SCM ID where the project will be assigned
                                   after conversion.
 
+    --target-org ORGNAME          The name of the target organization in the target SCM.
+
+    --map-fields FIELDREGEX       The field extraction regular expression (e.g. (?P<field>[^/]+))
+                                  used to extract fields from the portion of the source
+                                  project's repository URL (portion of the repository URL
+                                  after the "http://<baseurl>/<org>/" prefix) to obtain fields
+                                  used in the SUBSPEC.
+    
+    --map-target-repo SUBSPEC     The substitution specification for mapping portions of the
+                                  source repository URL to the target repository URL.  Static
+                                  text can surround extracted variables surrounded by curly
+                                  brackets (e.g. "static-prefix/{field1}/{field2}/static-suffix").
+                                  If a substitution spec is not provided, the source repository
+                                  sub-path after the organization is used by default.
+
     --max-batches MAXBATCH        Maximum number of batches of 15 projects to convert this
                                   run. All projects will be converted in random batches
                                   if not specified.
 
     --recovery-only               Only resume and complete any conversions left in-progress
                                   from a previous, interrupted run, then exit.
-
-    --ignore-url-mismatch         Ignore mismatches of repository base URLs.
 
     --skip-recovery               Don't perform recovery this run if recovery
                                   files are found.
@@ -57,10 +79,15 @@ class ConvertScmsCommand(Command):
 
     --regex-ignore-case           Use case-insensitive regular expression matching.
 
+    --token TOKEN                 An SCM PAT for SCMs that require a token for conversion.
+
+    --token-env                   Retrieves the SCM PAT from the environment variable CX_PAT.
+
     """
     # fmt: on
 
     CMD_NAME = "convert-scms"
+    PAT_ENV = "CX_PAT"
 
     async def execute(self, cmdline_args: List[str]):
         parsed_args = docopt(
@@ -74,20 +101,75 @@ class ConvertScmsCommand(Command):
 
         await self.__batch_coro_factory(parsed_args)
 
+    @staticmethod
+    def __scm_token(args: ParsedOptions) -> str | None:
+        """Retrieves the SCM PAT from --token or, with --token-env, from the
+        environment variable named by `PAT_ENV`.
+
+        :param args: The parsed command line options.
+        :type args: ParsedOptions
+
+        :return: The SCM PAT, or None if neither --token nor --token-env is
+                 provided.
+        :rtype: str | None
+
+        :raises AbortedConversionException: --token-env is provided and the
+                                            environment variable is missing
+                                            or empty, or --token is empty.
+        """
+        if args["--token-env"]:
+            token = os.environ.get(ConvertScmsCommand.PAT_ENV)
+            if token is None or len(token) == 0:
+                raise AbortedConversionException.missing_secret_env(
+                    ConvertScmsCommand.PAT_ENV, "SCM PAT"
+                )
+            return token
+
+        token = args["--token"]
+        if token is not None and len(token) == 0:
+            raise AbortedConversionException.empty_secret("SCM PAT")
+        return token
+
     def __batch_coro_factory(self, args: ParsedOptions) -> Coroutine:
+        """Creates the conversion coroutine for the parsed command line.
+
+        :param args: The parsed command line options.
+        :type args: ParsedOptions
+
+        :return: The coroutine that performs the recovery or the conversion.
+        :rtype: Coroutine
+
+        :raises re.error: --map-fields is not a valid regular expression.
+        :raises ValueError: --map-target-repo is not a valid substitution
+                            specification.
+        :raises AbortedConversionException: The SCM PAT option is provided but
+                                            the PAT is missing or empty.
+        """
+        scm_token = ConvertScmsCommand.__scm_token(args)
+
         if args["--recovery-only"]:
             return RecoverableConverter(
-                self.client, args["--report"], threads=self.threads
+                self.client, args["--report"], scm_token, threads=self.threads
             ).convert()
         else:
+            if args["--map-fields"] is not None:
+                mapper = SubstituteConversionMapper(
+                    args["--map-fields"], args["--map-target-repo"]
+                )
+            else:
+                mapper = DefaultConversionMapper()
+
             max_batches = args.get("--max-batches")
             if max_batches is None:
                 max_batches = 0
 
             convert_args = [
                 self.client,
-                args["--source-id"],
-                args["--target-id"],
+                [int(x) for x in args["--source-id"]],
+                int(args["--target-id"]),
+                args["--target-org"],
+                mapper,
+                scm_token,
                 args["--report"],
                 self.threads,
             ]
@@ -110,7 +192,6 @@ class ConvertScmsCommand(Command):
             return converter_inst(*convert_args).convert(
                 max_batches=int(max_batches),
                 project_id=args.get("--project-id"),
-                override_url_mismatch=args["--ignore-url-mismatch"],
                 skip_recovery=args["--skip-recovery"],
             )
 

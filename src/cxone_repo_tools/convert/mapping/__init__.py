@@ -1,2 +1,4 @@
-from .repository_conversion_mapper import RepositoryConversionMapper
+from .conversion_mapper import ConversionMapper
+from .default_conversion_mapper import DefaultConversionMapper
 from .string_by_regex import StringByRegex
+from .substitute_conversion_mapper import SubstituteConversionMapper

@@ -27,8 +27,25 @@ class RecoverableConverter:
         self,
         client: CxOneRepoToolsClient,
         report_path: str,
+        scm_token: str | None,
         threads: int = 2,
     ):
+        """Initializes the converter.
+
+        :param client: The client used to make Checkmarx One API calls.
+        :type client: CxOneRepoToolsClient
+
+        :param report_path: The path of the conversion report file.
+        :type report_path: str
+
+        :param scm_token: The SCM PAT for SCMs that require a token for
+                          conversion, or None if no token was provided.
+        :type scm_token: str | None
+
+        :param threads: The maximum number of concurrent operations.
+                        Defaults to 2.
+        :type threads: int, optional
+        """
         self._client = client
         self._threads = asyncio.Semaphore(threads)
 
@@ -37,6 +54,16 @@ class RecoverableConverter:
         self._conversion_threads = asyncio.Semaphore(1)
 
         self._report = report_path
+        self.__scm_token = scm_token
+
+    @property
+    def _scm_token(self) -> str | None:
+        """The SCM PAT for SCMs that require a token for conversion, or None
+        if no token was provided.
+
+        :rtype: str | None
+        """
+        return self.__scm_token
 
     async def _enable_repo_incremental(self, project_id: str) -> bool:
 
@@ -109,7 +136,7 @@ class RecoverableConverter:
 
     async def _process_batches(
         self,
-        batches: List[List[ConversionBatch]],
+        batches: List[ConversionBatch],
         batch_desc: str,
         *,
         max_batches: int = 0,
@@ -126,11 +153,10 @@ class RecoverableConverter:
 
             tasks = []
             batch_count = 0
-            for scm_batches in batches:
-                for org_batch in scm_batches:
-                    if max_batches == 0 or batch_count < max_batches:
-                        tasks.append(self.__process_single_batch(org_batch, writer))
-                    batch_count += 1
+            for org_batch in batches:
+              if max_batches == 0 or batch_count < max_batches:
+                  tasks.append(self.__process_single_batch(org_batch, writer))
+              batch_count += 1
 
             await tqdm.gather(*tasks, desc=batch_desc)
 
@@ -138,10 +164,9 @@ class RecoverableConverter:
         # Recovery means validation has already happened for those
         # conversions being recovered.  Assuming the CxOne credentials
         # are valid, resume conversions for recovery batches.
-        recovery_batches = ConversionBatch.load_recovery_batches()
+        recovery_batches = ConversionBatch.load_recovery_batches(self._scm_token)
         if recovery_batches is not None:
-            batches = [[batch] for batch in recovery_batches]
-            await self._process_batches(batches, "Recovering")
+            await self._process_batches(recovery_batches, "Recovering")
 
     async def convert(self):
         await self._recover()

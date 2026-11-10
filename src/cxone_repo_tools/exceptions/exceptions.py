@@ -40,12 +40,21 @@ class ConversionException(Exception):
         )
 
     @staticmethod
-    def project_already_assigned(project_id : str, project_name : str, assigned_scm_id : str):
-        return ConversionException(f"Project {project_name} ({project_id}) is already assigned to scm {assigned_scm_id}")
+    def project_already_assigned(
+        project_id: str, project_name: str, assigned_scm_id: str
+    ):
+        return ConversionException(
+            f"Project {project_name} ({project_id}) is already assigned to scm {assigned_scm_id}"
+        )
 
     @staticmethod
-    def project_not_connected_to_scms(project_id : str, project_name : str, source_ids : List[str]):
-        return ConversionException(f"Project {project_name} ({project_id}) is not connected to scms {','.join(source_ids)}")
+    def project_not_connected_to_scms(
+        project_id: str, project_name: str, source_ids: List[str]
+    ):
+        return ConversionException(
+            f"Project {project_name} ({project_id}) is not connected to scms {','.join(source_ids)}"
+        )
+
 
 class AbortedConversionException(Exception):
 
@@ -156,4 +165,39 @@ class MappingException(Exception):
         return MappingException(
             f"Input [{input_string}] did not yield the extracted values: "
             f"{', '.join(missing)}"
+        )
+
+    @staticmethod
+    def url_not_under_base(url: str, base_url: str) -> MappingException:
+        """Creates the exception raised when a repository URL is not under the
+        expected base URL.
+
+        :param url: The repository URL.
+        :type url: str
+
+        :param base_url: The base URL the repository URL was expected to be
+                         under.
+        :type base_url: str
+
+        :rtype: MappingException
+        """
+        return MappingException(
+            f"Repository URL [{url}] is not under base URL [{base_url}]"
+        )
+
+    @staticmethod
+    def org_not_in_url(url: str, org: str) -> MappingException:
+        """Creates the exception raised when the path segment after the base
+        URL of a repository URL is not the expected organization.
+
+        :param url: The repository URL.
+        :type url: str
+
+        :param org: The organization expected after the base URL.
+        :type org: str
+
+        :rtype: MappingException
+        """
+        return MappingException(
+            f"Repository URL [{url}] is not in organization [{org}]"
         )
