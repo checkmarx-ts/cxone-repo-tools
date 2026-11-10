@@ -46,7 +46,9 @@ class ConvertScmsCommand(Command):
 
     --skip-recovery               Don't perform recovery this run if recovery
                                   files are found.
-
+    
+    --project-id PROJECTID        A project id of a single project to convert.
+    
     --project-name-match REGEX    Converts projects with names matching the provided
                                   regular expression.
     
