@@ -73,9 +73,12 @@ class PruneRepoConfigsCommand(Command):
         _log.info(f"Found {len(unused)} tags with no associated configurations.")
 
         if not confirm:
-            print("Tags that would be deleted (use --confirm to delete):")
-            for tag in unused:
-                print(f"  {tag.name} ({tag.tagid})")
+            if len(unused) > 0:
+              print("Tags that would be deleted (use --confirm to delete):")
+              for tag in unused:
+                  print(f"  {tag.name} ({tag.tagid})")
+            else:
+                print("No tags found to delete.")
             return
 
         semaphore = asyncio.Semaphore(self.threads)
@@ -112,9 +115,12 @@ class PruneRepoConfigsCommand(Command):
         )
 
         if not confirm:
-            print("Configurations that would be deleted (use --confirm to delete):")
-            for cfg in unused:
-                print(f"  {cfg.name} ({cfg.configId}) [{cfg.packageManager.value}]")
+            if len(unused) > 0:
+              print("Configurations that would be deleted (use --confirm to delete):")
+              for cfg in unused:
+                  print(f"  {cfg.name} ({cfg.configId}) [{cfg.packageManager.value}]")
+            else:
+                print("No configurations to delete.")
             return
 
         semaphore = asyncio.Semaphore(self.threads)
