@@ -10,12 +10,13 @@ dependencies = [
   "aiocsv==1.4.1",
   "aiofiles==25.1.0",
   "tqdm==4.70.0",
-  "cxone-async-api==1.1.9"
+  "cxone-async-api==1.1.9",
+  "dotwiz==0.5.0"
 ]
 readme = "README.md"
 
 description = "CheckmarxOne Repository Tools"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 
 [project.scripts]
 cxone-repo-tools = "cxone_repo_tools.__main__:cli_entry"

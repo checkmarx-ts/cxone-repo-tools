@@ -1,5 +1,6 @@
 from cxone_repo_tools.client import CxOneRepoToolsClient
-from typing import List, Dict
+from typing import List
+from dotwiz import DotWiz
 from asyncio import Semaphore, Lock
 from cxone_api.util import json_on_ok
 from cxone_api.low.code_repository_management import retrieve_list_of_scms
@@ -42,9 +43,9 @@ class ScmProjectIndex:
         """
         return self.__threads
 
-    async def get_scm_data(self, scm_id: int) -> Dict | None:
+    async def get_scm_data(self, scm_id: int) -> DotWiz | None:
         await self.__index_scms()
-        return self.__scm_index.get(scm_id)
+        return DotWiz(self.__scm_index.get(scm_id))
 
     async def get_scm_ids(self) -> List[int]:
         """Retrieves the IDs of every SCM configured in the tenant.  The SCM

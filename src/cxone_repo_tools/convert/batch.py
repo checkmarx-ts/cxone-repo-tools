@@ -8,10 +8,10 @@ from cxone_api.high.projects import ProjectRepoConfig
 class ConversionBatch:
     __RECOVER_FILE_EXT = ".recovery.json"
 
-    def __init__(self, org: str, scm_type: str, scm_url: str):
-        self.__org = org
-        self.__scm_type = scm_type
-        self.__scm_url = scm_url
+    def __init__(self, target_org: str, target_scm_type: str, target_scm_url: str):
+        self.__target_org = target_org
+        self.__target_scm_type = target_scm_type
+        self.__target_scm_url = target_scm_url
         self.__disconnect_projects = []
         self.__enable_sast_incremental_projects = []
         self.__project_convert_data = {}
@@ -24,9 +24,9 @@ class ConversionBatch:
     def to_dict(self) -> Dict:
         return {
             "batch_id": self.__batch_id,
-            "org": self.__org,
-            "scm_type": self.__scm_type,
-            "scm_url": self.__scm_url,
+            "target_org": self.__target_org,
+            "target_scm_type": self.__target_scm_type,
+            "target_scm_url": self.__target_scm_url,
             "disconnect": self.__disconnect_projects,
             "conversion": self.__project_convert_data,
             "id2name": self.__project_id_to_name_map,
@@ -72,7 +72,7 @@ class ConversionBatch:
 
     @property
     def org(self) -> str:
-        return self.__org
+        return self.__target_org
 
     @property
     def size(self) -> int:
@@ -92,9 +92,9 @@ class ConversionBatch:
     def as_api_payload(self):
         return {
             "projects": list(self.__project_convert_data.values()),
-            "scmType": self.__scm_type,
-            "scmOnPremUrl": self.__scm_url,
-            "orgIdentity": self.__org,
+            "scmType": self.__target_scm_type,
+            "scmOnPremUrl": self.__target_scm_url,
+            "orgIdentity": self.__target_org,
         }
 
     @property
@@ -142,7 +142,7 @@ class ConversionBatch:
                     self.__recovery_mode = False
                     await self.__remove_recover_file()
 
-    async def add(self, repo_cfg: ProjectRepoConfig):
+    async def add(self, repo_cfg: ProjectRepoConfig, target_repo_url : str):
         async with self.__state_lock:
             self.__disconnect_projects.append(repo_cfg.id)
             self.__project_id_to_name_map[repo_cfg.name] = repo_cfg.id
@@ -152,7 +152,7 @@ class ConversionBatch:
 
             self.__project_convert_data[repo_cfg.id] = {
                 "cxProjectId": repo_cfg.id,
-                "scmRepositoryUrl": await repo_cfg.repo_url,
+                "scmRepositoryUrl": target_repo_url,
                 "protectedBranches": await repo_cfg.protected_branches,
                 "types": await repo_cfg.get_enabled_scanners(
                     await repo_cfg.primary_branch

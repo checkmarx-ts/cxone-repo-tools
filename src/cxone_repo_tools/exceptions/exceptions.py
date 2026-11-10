@@ -39,6 +39,13 @@ class ConversionException(Exception):
             f"Failed to enable SAST incremental scans for project {project_name}"
         )
 
+    @staticmethod
+    def project_already_assigned(project_id : str, project_name : str, assigned_scm_id : str):
+        return ConversionException(f"Project {project_name} ({project_id}) is already assigned to scm {assigned_scm_id}")
+
+    @staticmethod
+    def project_not_connected_to_scms(project_id : str, project_name : str, source_ids : List[str]):
+        return ConversionException(f"Project {project_name} ({project_id}) is not connected to scms {','.join(source_ids)}")
 
 class AbortedConversionException(Exception):
 
