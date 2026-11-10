@@ -8,7 +8,13 @@ from cxone_api.high.projects import ProjectRepoConfig
 class ConversionBatch:
     __RECOVER_FILE_EXT = ".recovery.json"
 
-    def __init__(self, target_org: str, target_scm_type: str, target_scm_url: str, target_scm_token : str | None):
+    def __init__(
+        self,
+        target_org: str,
+        target_scm_type: str,
+        target_scm_url: str,
+        target_scm_token: str | None,
+    ):
         self.__target_scm_token = target_scm_token
         self.__target_org = target_org
         self.__target_scm_type = target_scm_type
@@ -36,7 +42,7 @@ class ConversionBatch:
 
     @staticmethod
     def from_dict(
-        target_scm_token : str | None,
+        target_scm_token: str | None,
         *,
         target_org: str,
         target_scm_type: str,
@@ -47,7 +53,9 @@ class ConversionBatch:
         id2name: Dict,
         sast_inc_enabled: List[str],
     ) -> ConversionBatch:
-        inst = ConversionBatch(target_org, target_scm_type, target_scm_url, target_scm_token)
+        inst = ConversionBatch(
+            target_org, target_scm_type, target_scm_url, target_scm_token
+        )
         inst.__batch_id = batch_id
         inst.__disconnect_projects = disconnect
         inst.__project_convert_data = conversion
@@ -56,12 +64,16 @@ class ConversionBatch:
         return inst
 
     @staticmethod
-    def load_recovery_batches(target_scm_token : str | None) -> List[ConversionBatch] | None:
+    def load_recovery_batches(
+        target_scm_token: str | None,
+    ) -> List[ConversionBatch] | None:
         loaded = []
 
         for recover_file in Path(".").glob(f"*{ConversionBatch.__RECOVER_FILE_EXT}"):
             with open(recover_file, "rt") as json_file:
-                loaded.append(ConversionBatch.from_dict(target_scm_token, **json.load(json_file)))
+                loaded.append(
+                    ConversionBatch.from_dict(target_scm_token, **json.load(json_file))
+                )
 
         if len(loaded) == 0:
             return None
@@ -100,7 +112,7 @@ class ConversionBatch:
         }
 
         if self.__target_scm_token is not None:
-            payload['token'] = self.__target_scm_token
+            payload["token"] = self.__target_scm_token
 
         return payload
 
@@ -149,7 +161,7 @@ class ConversionBatch:
                     self.__recovery_mode = False
                     await self.__remove_recover_file()
 
-    async def add(self, repo_cfg: ProjectRepoConfig, target_repo_url : str):
+    async def add(self, repo_cfg: ProjectRepoConfig, target_repo_url: str):
         async with self.__state_lock:
             self.__disconnect_projects.append(repo_cfg.id)
             self.__project_id_to_name_map[repo_cfg.name] = repo_cfg.id

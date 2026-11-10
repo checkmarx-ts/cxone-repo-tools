@@ -26,7 +26,7 @@ class BatchConverter(RecoverableConverter):
         client: CxOneRepoToolsClient,
         source_ids: List[int],
         target_id: int,
-        target_org : str,
+        target_org: str,
         mapper: ConversionMapper,
         scm_token: str | None,
         report_path: str,
@@ -135,29 +135,36 @@ class BatchConverter(RecoverableConverter):
         cur_batches_by_org = {}
 
         for repo_cfg in self.__conversion_cfgs:
-          if await self._include_in_batch(repo_cfg):
-              if cur_batches_by_org.get(self.__target_org) is None or (
-                  cur_batches_by_org.get(self.__target_org) is not None
-                  and cur_batches_by_org[self.__target_org].size
-                  >= BatchConverter.__BATCH_SIZE
-              ):
-                  cur_batches_by_org[self.__target_org] = ConversionBatch(
-                      self._scm_token,
-                      self.__target_org,
-                      self.__scm_data[int(self.__target_id)].type,
-                      self.__scm_data[int(self.__target_id)].repoBaseUrl,
-                  )
-                  batches.append(cur_batches_by_org[self.__target_org])
+            if await self._include_in_batch(repo_cfg):
+                if cur_batches_by_org.get(self.__target_org) is None or (
+                    cur_batches_by_org.get(self.__target_org) is not None
+                    and cur_batches_by_org[self.__target_org].size
+                    >= BatchConverter.__BATCH_SIZE
+                ):
+                    cur_batches_by_org[self.__target_org] = ConversionBatch(
+                        self._scm_token,
+                        self.__target_org,
+                        self.__scm_data[int(self.__target_id)].type,
+                        self.__scm_data[int(self.__target_id)].repoBaseUrl,
+                    )
+                    batches.append(cur_batches_by_org[self.__target_org])
 
-              target_repo_url = self.__mapper.convert(self.__scm_data[await repo_cfg.scm_id].repoBaseUrl, 
-                                          await repo_cfg.repo_url, await repo_cfg.scm_org,
-                                          self.__scm_data[int(self.__target_id)].repoBaseUrl, self.__target_org)
-              await cur_batches_by_org[self.__target_org].add(repo_cfg, target_repo_url)
-              convert_count += 1
+                target_repo_url = self.__mapper.convert(
+                    self.__scm_data[await repo_cfg.scm_id].repoBaseUrl,
+                    await repo_cfg.repo_url,
+                    await repo_cfg.scm_org,
+                    self.__scm_data[int(self.__target_id)].repoBaseUrl,
+                    self.__target_org,
+                )
+                await cur_batches_by_org[self.__target_org].add(
+                    repo_cfg, target_repo_url
+                )
+                convert_count += 1
 
-        _log.info(f"{convert_count} projects found for conversion in {len(batches)} batches.")
+        _log.info(
+            f"{convert_count} projects found for conversion in {len(batches)} batches."
+        )
         await self._process_batches(batches, "Converting", max_batches=max_batches)
-
 
     async def convert(
         self,
@@ -174,15 +181,21 @@ class BatchConverter(RecoverableConverter):
         if project_id is not None:
             cfg = ProjectRepoConfig.from_project_id(self._client, project_id)
             if self.__target_id == await cfg.scm_id:
-                raise ConversionException.project_already_assigned(project_id, cfg.name, await cfg.scm_id)
+                raise ConversionException.project_already_assigned(
+                    project_id, cfg.name, await cfg.scm_id
+                )
             if await cfg.scm_id not in self.__source_ids:
-                raise ConversionException.project_not_connected_to_scms(project_id, cfg.name, self.__source_ids)
+                raise ConversionException.project_not_connected_to_scms(
+                    project_id, cfg.name, self.__source_ids
+                )
 
             self.__conversion_cfgs = [cfg]
         else:
             self.__conversion_cfgs = []
             for source_id in self.__source_ids:
-                self.__conversion_cfgs += await self.__index.associated_projects(int(source_id))
+                self.__conversion_cfgs += await self.__index.associated_projects(
+                    int(source_id)
+                )
 
         await self.__validate_conversion()
         await self.__convert_projects(max_batches=max_batches)

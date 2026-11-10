@@ -74,9 +74,9 @@ class PruneRepoConfigsCommand(Command):
 
         if not confirm:
             if len(unused) > 0:
-              print("Tags that would be deleted (use --confirm to delete):")
-              for tag in unused:
-                  print(f"  {tag.name} ({tag.tagid})")
+                print("Tags that would be deleted (use --confirm to delete):")
+                for tag in unused:
+                    print(f"  {tag.name} ({tag.tagid})")
             else:
                 print("No tags found to delete.")
             return
@@ -116,9 +116,9 @@ class PruneRepoConfigsCommand(Command):
 
         if not confirm:
             if len(unused) > 0:
-              print("Configurations that would be deleted (use --confirm to delete):")
-              for cfg in unused:
-                  print(f"  {cfg.name} ({cfg.configId}) [{cfg.packageManager.value}]")
+                print("Configurations that would be deleted (use --confirm to delete):")
+                for cfg in unused:
+                    print(f"  {cfg.name} ({cfg.configId}) [{cfg.packageManager.value}]")
             else:
                 print("No configurations to delete.")
             return

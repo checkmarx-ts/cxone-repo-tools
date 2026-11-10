@@ -154,9 +154,9 @@ class RecoverableConverter:
             tasks = []
             batch_count = 0
             for org_batch in batches:
-              if max_batches == 0 or batch_count < max_batches:
-                  tasks.append(self.__process_single_batch(org_batch, writer))
-              batch_count += 1
+                if max_batches == 0 or batch_count < max_batches:
+                    tasks.append(self.__process_single_batch(org_batch, writer))
+                batch_count += 1
 
             await tqdm.gather(*tasks, desc=batch_desc)
 
