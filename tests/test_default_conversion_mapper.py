@@ -9,7 +9,7 @@ class DefaultConversionMapperTestCase(unittest.TestCase):
         self.mapper = DefaultConversionMapper()
 
     def convert(self, source_url, *, source_base="https://github.com", org="acme"):
-        return self.mapper.convert(
+        return self.mapper.convert_repo_url(
             source_base, source_url, org, "https://ghe.example.com", "new-org"
         )
 
@@ -45,7 +45,7 @@ class DefaultConversionMapperTestCase(unittest.TestCase):
 
     def test_trailing_slashes_on_base_urls_ignored(self):
         self.assertEqual(
-            self.mapper.convert(
+            self.mapper.convert_repo_url(
                 "https://github.com/",
                 "https://github.com/acme/widgets",
                 "acme",
@@ -90,7 +90,7 @@ class DefaultConversionMapperTestCase(unittest.TestCase):
 
     def test_base_urls_with_paths(self):
         self.assertEqual(
-            self.mapper.convert(
+            self.mapper.convert_repo_url(
                 "https://scm.example.com/gitlab",
                 "https://scm.example.com/GitLab/acme/widgets",
                 "acme",
@@ -102,7 +102,7 @@ class DefaultConversionMapperTestCase(unittest.TestCase):
 
     def test_url_outside_base_url_path_raises(self):
         with self.assertRaises(MappingException) as ctx:
-            self.mapper.convert(
+            self.mapper.convert_repo_url(
                 "https://scm.example.com/gitlab",
                 "https://scm.example.com/other/acme/widgets",
                 "acme",
@@ -119,15 +119,22 @@ class DefaultConversionMapperTestCase(unittest.TestCase):
 
 
 class RecordingMapper(ConversionMapper):
-    """Records the paths given to _map_repo_path and returns a fixed path."""
+    """Records the paths given to _map_repo_path and _map_project_name and
+    returns fixed values."""
 
-    def __init__(self, mapped: str):
+    def __init__(self, mapped: str, project_name: str | None = None):
         self.received = []
         self.mapped = mapped
+        self.received_project = []
+        self.project_name = project_name
 
     def _map_repo_path(self, path: str) -> str:
         self.received.append(path)
         return self.mapped
+
+    def _map_project_name(self, path: str) -> str | None:
+        self.received_project.append(path)
+        return self.project_name
 
 
 class ConversionMapperSubclassTestCase(unittest.TestCase):
@@ -138,16 +145,88 @@ class ConversionMapperSubclassTestCase(unittest.TestCase):
 
     def test_subclass_without_map_repo_path_is_abstract(self):
         class Incomplete(ConversionMapper):
-            pass
+            def _map_project_name(self, path):
+                return None
 
         with self.assertRaises(TypeError):
             Incomplete()
+
+    def test_subclass_without_map_project_name_is_abstract(self):
+        class Incomplete(ConversionMapper):
+            def _map_repo_path(self, path):
+                return path
+
+        with self.assertRaises(TypeError):
+            Incomplete()
+
+    def test_source_repo_path_is_path_after_org(self):
+        self.assertEqual(
+            DefaultConversionMapper()._source_repo_path(
+                "https://github.com", "https://github.com/ACME/sub/repo.git", "acme"
+            ),
+            "sub/repo.git",
+        )
+
+    def test_source_repo_path_is_dot_when_url_ends_at_org(self):
+        self.assertEqual(
+            DefaultConversionMapper()._source_repo_path(
+                "https://github.com", "https://github.com/acme", "acme"
+            ),
+            ".",
+        )
+
+    def test_source_repo_path_validates_base_url_and_org(self):
+        mapper = DefaultConversionMapper()
+        with self.assertRaises(MappingException):
+            mapper._source_repo_path(
+                "https://github.com", "https://gitlab.com/acme/repo", "acme"
+            )
+        with self.assertRaises(MappingException):
+            mapper._source_repo_path(
+                "https://github.com", "https://github.com/other/repo", "acme"
+            )
+
+    def test_convert_project_passes_path_after_org_to_map_project_name(self):
+        mapper = RecordingMapper("x", project_name="renamed")
+        self.assertEqual(
+            mapper.convert_project(
+                "https://github.com", "https://github.com/acme/sub/repo.git", "acme"
+            ),
+            "renamed",
+        )
+        self.assertEqual(mapper.received_project, ["sub/repo.git"])
+
+    def test_convert_project_returns_none_from_map_project_name(self):
+        mapper = RecordingMapper("x", project_name=None)
+        self.assertIsNone(
+            mapper.convert_project(
+                "https://github.com", "https://github.com/acme/widgets", "acme"
+            )
+        )
+
+    def test_convert_project_validates_before_map_project_name(self):
+        mapper = RecordingMapper("x", project_name="renamed")
+        with self.assertRaises(MappingException):
+            mapper.convert_project(
+                "https://github.com", "https://gitlab.com/acme/widgets", "acme"
+            )
+        self.assertEqual(mapper.received_project, [])
+
+    def test_default_map_project_name_returns_none(self):
+        self.assertIsNone(DefaultConversionMapper()._map_project_name("repo"))
+
+    def test_default_convert_project_returns_none(self):
+        self.assertIsNone(
+            DefaultConversionMapper().convert_project(
+                "https://github.com", "https://github.com/acme/widgets", "acme"
+            )
+        )
 
     def test_default_mapper_is_a_conversion_mapper(self):
         self.assertIsInstance(DefaultConversionMapper(), ConversionMapper)
 
     def convert(self, mapper, source_url):
-        return mapper.convert(
+        return mapper.convert_repo_url(
             "https://github.com",
             source_url,
             "acme",

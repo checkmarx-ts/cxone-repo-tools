@@ -142,14 +142,14 @@ class BatchConverter(RecoverableConverter):
                     >= BatchConverter.__BATCH_SIZE
                 ):
                     cur_batches_by_org[self.__target_org] = ConversionBatch(
-                        self._scm_token,
                         self.__target_org,
                         self.__scm_data[int(self.__target_id)].type,
                         self.__scm_data[int(self.__target_id)].repoBaseUrl,
+                        self._scm_token,
                     )
                     batches.append(cur_batches_by_org[self.__target_org])
 
-                target_repo_url = self.__mapper.convert(
+                target_repo_url = self.__mapper.convert_repo_url(
                     self.__scm_data[await repo_cfg.scm_id].repoBaseUrl,
                     await repo_cfg.repo_url,
                     await repo_cfg.scm_org,

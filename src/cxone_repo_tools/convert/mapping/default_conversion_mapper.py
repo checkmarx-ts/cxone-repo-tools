@@ -6,7 +6,7 @@ class DefaultConversionMapper(ConversionMapper):
     the same way as the source SCM: the source base URL is replaced by the
     target base URL, the organization path segment that follows the base URL
     is replaced by the target organization, and the rest of the path is kept
-    unchanged.
+    unchanged.  The project name is not changed.
 
     For example, with a source base URL of ``https://github.com`` and a
     target base URL of ``https://github.example.com``,
@@ -27,3 +27,16 @@ class DefaultConversionMapper(ConversionMapper):
         :rtype: str
         """
         return path
+
+    def _map_project_name(self, path: str) -> str | None:
+        """Returns None, because the default mapping does not change the
+        project name.
+
+        :param path: The relative POSIX path that follows the source
+                     organization.
+        :type path: str
+
+        :return: None.
+        :rtype: str | None
+        """
+        return None

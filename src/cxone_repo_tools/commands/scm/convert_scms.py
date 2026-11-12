@@ -25,7 +25,8 @@ class ConvertScmsCommand(Command):
                         [--skip-recovery]
                         [--project-id PROJECTID | --project-name-match REGEX | --project-group-match REGEX]
                         [--regex-ignore-case]
-                        [(--map-fields FIELDREGEX --map-target-repo SUBSPEC)]
+                        [(--map-fields FIELDREGEX --map-target-repo REPOSPEC
+                          [--map-target-project PRJSPEC])]
                         [--token TOKEN | --token-env]
                         --target-id TARGETID --target-org ORGNAME
                         --source-id SOURCEIDS...
@@ -50,14 +51,20 @@ class ConvertScmsCommand(Command):
                                   used to extract fields from the portion of the source
                                   project's repository URL (portion of the repository URL
                                   after the "http://<baseurl>/<org>/" prefix) to obtain fields
-                                  used in the SUBSPEC.
+                                  used in the REPOSPEC and PRJSPEC.
     
-    --map-target-repo SUBSPEC     The substitution specification for mapping portions of the
+    --map-target-repo REPOSPEC    The substitution specification for mapping portions of the
                                   source repository URL to the target repository URL.  Static
                                   text can surround extracted variables surrounded by curly
                                   brackets (e.g. "static-prefix/{field1}/{field2}/static-suffix").
                                   If a substitution spec is not provided, the source repository
                                   sub-path after the organization is used by default.
+
+    --map-target-project PRJSPEC  The substitution specification for the project name after
+                                  conversion, built from static text and the fields extracted
+                                  by --map-fields (e.g. "{field1}-{field2}").  Can only be used
+                                  with --map-fields.  If not provided, the project name is not
+                                  changed by the conversion.
 
     --max-batches MAXBATCH        Maximum number of batches of 15 projects to convert this
                                   run. All projects will be converted in random batches
@@ -154,7 +161,9 @@ class ConvertScmsCommand(Command):
         else:
             if args["--map-fields"] is not None:
                 mapper = SubstituteConversionMapper(
-                    args["--map-fields"], args["--map-target-repo"]
+                    args["--map-fields"],
+                    args["--map-target-repo"],
+                    args["--map-target-project"],
                 )
             else:
                 mapper = DefaultConversionMapper()

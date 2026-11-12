@@ -6,14 +6,15 @@ from cxone_repo_tools.exceptions import MappingException
 
 
 class ConversionMapper(ABC):
-    """Base class for mapping the repository URL of a project being converted
-    from a source SCM to the corresponding repository URL in the target SCM.
+    """Base class for mapping the repository URL and project name of a project
+    being converted from a source SCM to the target SCM.
 
-    `convert` replaces the source base URL with the target base URL and the
-    organization path segment that follows the base URL with the target
-    organization.  Subclasses implement `_map_repo_path` to produce the path
-    that follows the target organization from the path that follows the
-    source organization.
+    `convert_repo_url` replaces the source base URL with the target base URL
+    and the organization path segment that follows the base URL with the
+    target organization.  Subclasses implement `_map_repo_path` to produce the
+    path that follows the target organization from the path that follows the
+    source organization, and `_map_project_name` to produce the project name
+    that `convert_project` returns.
     """
 
     @staticmethod
@@ -47,7 +48,119 @@ class ConversionMapper(ABC):
         """
         raise NotImplementedError(ConversionMapper._map_repo_path.__name__)
 
-    def convert(
+    @abstractmethod
+    def _map_project_name(self, path: str) -> str | None:
+        """Maps the path that follows the organization in the source
+        repository URL to the project name to set after conversion.
+
+        :param path: The relative POSIX path that follows the source
+                     organization, for example ``sub/group/repo.git``.  It is
+                     ``.`` when the source URL ends at the organization.
+        :type path: str
+
+        :return: The project name after conversion, or None if the project
+                 name is not changed.
+        :rtype: str | None
+
+        :raises NotImplementedError: The subclass does not implement this
+                                     method.
+        """
+        raise NotImplementedError(ConversionMapper._map_project_name.__name__)
+
+    def convert_project(
+        self,
+        source_repo_base_url: str,
+        source_repo_url: str,
+        source_repo_org: str,
+    ) -> str | None:
+        """Builds the project name to set after the project is converted from
+        the path that follows the organization in the source repository URL.
+
+        :param source_repo_base_url: The base URL of the source SCM, for
+                                     example ``https://github.com``.
+        :type source_repo_base_url: str
+
+        :param source_repo_url: The URL of the source repository.
+        :type source_repo_url: str
+
+        :param source_repo_org: The organization that owns the source
+                                repository.
+        :type source_repo_org: str
+
+        :return: The project name after conversion, or None if the project
+                 name is not changed.
+        :rtype: str | None
+
+        :raises MappingException: The source repository URL is not under the
+                                  source base URL, or the path segment after
+                                  the base URL is not the source organization.
+        """
+        return self._map_project_name(
+            self._source_repo_path(
+                source_repo_base_url, source_repo_url, source_repo_org
+            )
+        )
+
+    def _source_repo_path(
+        self,
+        source_repo_base_url: str,
+        source_repo_url: str,
+        source_repo_org: str,
+    ) -> str:
+        """Finds the path that follows the organization in a source repository
+        URL, after checking that the URL is under the source base URL and
+        that the organization follows the base URL.
+
+        The scheme, host, base path, and organization are compared without
+        regard to case, and a trailing slash on the base URL is ignored.
+
+        :param source_repo_base_url: The base URL of the source SCM, for
+                                     example ``https://github.com``.
+        :type source_repo_base_url: str
+
+        :param source_repo_url: The URL of the source repository.
+        :type source_repo_url: str
+
+        :param source_repo_org: The organization that owns the source
+                                repository.  It must be the path segment that
+                                follows the source base URL.
+        :type source_repo_org: str
+
+        :return: The relative POSIX path that follows the source organization,
+                 for example ``sub/group/repo.git``, or ``.`` when the URL
+                 ends at the organization.
+        :rtype: str
+
+        :raises MappingException: The source repository URL is not under the
+                                  source base URL, or the path segment after
+                                  the base URL is not the source organization.
+        """
+        source_base = urlsplit(source_repo_base_url)
+        source = urlsplit(source_repo_url)
+
+        base_segments = ConversionMapper.__segments(source_base.path)
+        source_segments = ConversionMapper.__segments(source.path)
+        prefix = source_segments[: len(base_segments)]
+
+        if (
+            source.scheme.casefold() != source_base.scheme.casefold()
+            or source.netloc.casefold() != source_base.netloc.casefold()
+            or [s.casefold() for s in prefix] != [s.casefold() for s in base_segments]
+        ):
+            raise MappingException.url_not_under_base(
+                source_repo_url, source_repo_base_url
+            )
+
+        org_and_path = source_segments[len(base_segments) :]
+        if (
+            len(org_and_path) == 0
+            or org_and_path[0].casefold() != source_repo_org.casefold()
+        ):
+            raise MappingException.org_not_in_url(source_repo_url, source_repo_org)
+
+        return str(PurePosixPath(*org_and_path[1:]))
+
+    def convert_repo_url(
         self,
         source_repo_base_url: str,
         source_repo_url: str,
@@ -87,30 +200,12 @@ class ConversionMapper(ABC):
                                   source base URL, or the path segment after
                                   the base URL is not the source organization.
         """
-        source_base = urlsplit(source_repo_base_url)
         source = urlsplit(source_repo_url)
-
-        base_segments = ConversionMapper.__segments(source_base.path)
-        source_segments = ConversionMapper.__segments(source.path)
-        prefix = source_segments[: len(base_segments)]
-
-        if (
-            source.scheme.casefold() != source_base.scheme.casefold()
-            or source.netloc.casefold() != source_base.netloc.casefold()
-            or [s.casefold() for s in prefix] != [s.casefold() for s in base_segments]
-        ):
-            raise MappingException.url_not_under_base(
-                source_repo_url, source_repo_base_url
+        mapped = self._map_repo_path(
+            self._source_repo_path(
+                source_repo_base_url, source_repo_url, source_repo_org
             )
-
-        org_and_path = source_segments[len(base_segments) :]
-        if (
-            len(org_and_path) == 0
-            or org_and_path[0].casefold() != source_repo_org.casefold()
-        ):
-            raise MappingException.org_not_in_url(source_repo_url, source_repo_org)
-
-        mapped = self._map_repo_path(str(PurePosixPath(*org_and_path[1:])))
+        )
 
         target_base = urlsplit(target_repo_base_url)
         target_path = PurePosixPath(
