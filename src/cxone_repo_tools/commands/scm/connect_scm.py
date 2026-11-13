@@ -3,6 +3,7 @@ from typing import List
 from cxone_repo_tools.commands.base import Command
 from cxone_repo_tools.exceptions import AbortedConversionException
 from cxone_repo_tools.connection import Connector
+from .scm_token import get_scm_token
 
 
 class ConnectScmCommand(Command):
@@ -19,6 +20,7 @@ class ConnectScmCommand(Command):
                       [--auto-sca-pr]
                       [--pr-decorations]
                       [--webhook]
+                      [--token TOKEN | --token-env]
 
     Connects a manual scan project to an SCM.
 
@@ -65,6 +67,10 @@ class ConnectScmCommand(Command):
 
     --webhook                     Allow webhook events to initiate scans.
 
+    --token TOKEN                 An SCM PAT for SCMs that require a token for connection.
+
+    --token-env                   Retrieves the SCM PAT from the environment variable CX_PAT.
+
     """
     # fmt: on
 
@@ -90,6 +96,17 @@ class ConnectScmCommand(Command):
         ]
 
     async def execute(self, cmdline_args: List[str]):
+        """Connects the project named by --project-id to the SCM named by
+        --scm-id.
+
+        :param cmdline_args: The command's arguments, without the command name.
+        :type cmdline_args: List[str]
+
+        :raises AbortedConversionException: No Checkmarx One connection
+                                            parameters were provided, or the
+                                            SCM PAT option is provided but the
+                                            PAT is missing or empty.
+        """
         parsed_args = docopt(
             ConnectScmCommand.__doc__,
             [ConnectScmCommand.CMD_NAME] + cmdline_args,
@@ -98,6 +115,8 @@ class ConnectScmCommand(Command):
 
         if self.client is None:
             raise AbortedConversionException.no_client()
+
+        scm_token = get_scm_token(parsed_args["--token"], parsed_args["--token-env"])
 
         await Connector.connect(
             self.client,
@@ -111,6 +130,7 @@ class ConnectScmCommand(Command):
             parsed_args["--pr-decorations"],
             repo_name=parsed_args.get("--repo-name"),
             protected_branches=parsed_args.get("--protected-branch"),
+            token=scm_token,
         )
 
     @staticmethod

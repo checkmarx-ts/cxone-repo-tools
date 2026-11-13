@@ -1,4 +1,3 @@
-import os
 from docopt import docopt, ParsedOptions
 from typing import List, Coroutine
 from cxone_repo_tools.commands.base import Command
@@ -9,6 +8,7 @@ from cxone_repo_tools.convert import (
     NameFilterConverter,
     GroupFilterConverter,
 )
+from .scm_token import get_scm_token
 from cxone_repo_tools.convert.mapping import (
     DefaultConversionMapper,
     SubstituteConversionMapper,
@@ -93,7 +93,6 @@ class ConvertScmsCommand(Command):
     # fmt: on
 
     CMD_NAME = "convert-scms"
-    PAT_ENV = "CX_PAT"
 
     async def execute(self, cmdline_args: List[str]):
         parsed_args = docopt(
@@ -106,35 +105,6 @@ class ConvertScmsCommand(Command):
             raise AbortedConversionException.no_client()
 
         await self.__batch_coro_factory(parsed_args)
-
-    @staticmethod
-    def __scm_token(args: ParsedOptions) -> str | None:
-        """Retrieves the SCM PAT from --token or, with --token-env, from the
-        environment variable named by `PAT_ENV`.
-
-        :param args: The parsed command line options.
-        :type args: ParsedOptions
-
-        :return: The SCM PAT, or None if neither --token nor --token-env is
-                 provided.
-        :rtype: str | None
-
-        :raises AbortedConversionException: --token-env is provided and the
-                                            environment variable is missing
-                                            or empty, or --token is empty.
-        """
-        if args["--token-env"]:
-            token = os.environ.get(ConvertScmsCommand.PAT_ENV)
-            if token is None or len(token) == 0:
-                raise AbortedConversionException.missing_secret_env(
-                    ConvertScmsCommand.PAT_ENV, "SCM PAT"
-                )
-            return token
-
-        token = args["--token"]
-        if token is not None and len(token) == 0:
-            raise AbortedConversionException.empty_secret("SCM PAT")
-        return token
 
     def __batch_coro_factory(self, args: ParsedOptions) -> Coroutine:
         """Creates the conversion coroutine for the parsed command line.
@@ -151,7 +121,7 @@ class ConvertScmsCommand(Command):
         :raises AbortedConversionException: The SCM PAT option is provided but
                                             the PAT is missing or empty.
         """
-        scm_token = ConvertScmsCommand.__scm_token(args)
+        scm_token = get_scm_token(args["--token"], args["--token-env"])
 
         if args["--recovery-only"]:
             return RecoverableConverter(
