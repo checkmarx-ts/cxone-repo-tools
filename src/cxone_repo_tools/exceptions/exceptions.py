@@ -75,6 +75,25 @@ class ConversionException(Exception):
         )
 
     @staticmethod
+    def project_already_connected(
+        project_id: str, project_name: str
+    ) -> ConversionException:
+        """Creates the exception raised when a project to be connected to an
+        SCM is already connected to an SCM.
+
+        :param project_id: The ID of the project.
+        :type project_id: str
+
+        :param project_name: The name of the project.
+        :type project_name: str
+
+        :rtype: ConversionException
+        """
+        return ConversionException(
+            f"Project {project_name} ({project_id}) is already connected to an SCM."
+        )
+
+    @staticmethod
     def rename_failed(project_id: str, project_target_name: str):
         return ConversionException(
             f"Attempt to rename project {project_id} to {project_target_name} failed."
