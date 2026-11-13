@@ -163,7 +163,7 @@ class RecoverableConverter:
                         if batch.check_sast_incremental_enabled(id):
                             try:
                                 assert await self._enable_repo_incremental(id)
-                            except (Exception, BaseException) as ex:
+                            except Exception as ex:  # pylint: disable=W0718
                                 _log.warning(
                                     f"Enabling SAST incremental scans for {repo_cfg.name} failed: {ex}",
                                     exc_info=True,

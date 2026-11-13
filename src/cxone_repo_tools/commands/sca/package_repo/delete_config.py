@@ -64,8 +64,8 @@ class DeleteConfigCommand(Command):
 
         config_id = parsed_args["--config-id"]
 
-        # cxone-async-api exceptions derive from BaseException, so __main__
-        # would not report this one cleanly.
+        # Reported as InvalidRepositoryConfiguration so __main__ prints a short
+        # message, for example for an unknown ID, instead of a traceback.
         try:
             cfg = await PackageRepositoryConfiguration.retrieve_by_configid(
                 self.client, config_id

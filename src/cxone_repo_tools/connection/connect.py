@@ -2,11 +2,7 @@ import logging
 from typing import List
 from cxone_repo_tools.convert import BatchConverter
 from cxone_repo_tools.client import CxOneRepoToolsClient
-from cxone_api.exceptions import (
-    AuthException,
-    CommunicationException,
-    ResponseException,
-)
+from cxone_api.exceptions import CommunicationException
 from cxone_api.util import json_on_ok
 from cxone_api.low.repos_manager import get_scm_by_id
 from cxone_api.low.projects import retrieve_project_info
@@ -121,8 +117,6 @@ class Connector:
                 await repo_cfg.update_repository_toggles(sastIncrementalScan=True)
 
             return True
-        # cxone-async-api exceptions derive from BaseException, so they are
-        # named explicitly; Exception alone would not catch them.
         except CommunicationException as ex:
             # The exception message includes the request payload, which can
             # contain the SCM token, so only the type and HTTP status are logged.
@@ -131,11 +125,7 @@ class Connector:
                 f"Failed to connect project {project_id} to SCM {scm_id}: "
                 f"{type(ex).__name__} (HTTP status {status})"
             )
-        except (  # pylint: disable=broad-exception-caught
-            Exception,
-            ResponseException,
-            AuthException,
-        ) as ex:
+        except Exception as ex:  # pylint: disable=broad-exception-caught
             _log.error(
                 f"Failed to connect project {project_id} to SCM {scm_id}: {ex}",
                 exc_info=True,

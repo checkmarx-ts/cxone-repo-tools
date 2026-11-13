@@ -1,5 +1,4 @@
 from cxone_repo_tools.client import CxOneRepoToolsClient
-from cxone_api.exceptions import ResponseException, ConfigurationException
 import asyncio, logging
 from tqdm.asyncio import tqdm
 from typing import Callable, Dict, List, Set, Tuple
@@ -122,13 +121,7 @@ async def __update_project_sca_exclusions(
                 await project_cfg.SCA.Exclusions.setValue(",".join(new_value))
                 await project_cfg.commit_config()
                 _log.info(f"Project {project_id} SCA exclusions {action}: {changed}.")
-            # cxone-async-api exceptions derive from BaseException, so they are
-            # named explicitly; Exception alone would not catch them.
-            except (  # pylint: disable=broad-exception-caught
-                Exception,
-                ResponseException,
-                ConfigurationException,
-            ) as ex:
+            except Exception as ex:  # pylint: disable=broad-exception-caught
                 _log.error(
                     f"Failed to update SCA exclusions for project {project_id}: {ex}"
                 )
