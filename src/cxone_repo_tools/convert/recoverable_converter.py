@@ -5,6 +5,7 @@ from typing import List, Dict
 from cxone_repo_tools.exceptions import ConversionException
 from cxone_repo_tools.client import CxOneRepoToolsClient
 from cxone_api.util import json_on_ok
+from cxone_api.low.projects import update_specific_project_fields
 from cxone_api.low.code_repository_management import disconnect_project_from_scm
 from cxone_api.low.code_repository_project_conversion import (
     convert_a_project,
@@ -101,38 +102,63 @@ class RecoverableConverter:
             await batch.begin_recovery_mode()
 
             for id in batch.disconnect_projects:
-                await disconnect_project_from_scm(self._client, id)
+                if not (await disconnect_project_from_scm(self._client, id)).ok:
+                    raise ConversionException.disconnect_failed(id)
 
-            status = await self.convert_project_and_wait(
+                # MUST rename the project when it is disconnected.  The API
+                # will reject a name change for an SCM connected project.
+                target_name = batch.get_new_project_name(id)
+                if target_name is not None:
+                    if not (
+                        await update_specific_project_fields(
+                            self._client, id, name=target_name
+                        )
+                    ).ok:
+                        # Previous failure may have named the project correctly but the API
+                        # will return an error trying to name it to an "existing project name"
+                        cfg = await ProjectRepoConfig.from_project_id(self._client, id)
+                        if cfg.name != target_name:
+                            raise ConversionException.rename_failed(id, target_name)
+
+            status = await RecoverableConverter.convert_project_and_wait(
                 self._client, batch.as_api_payload()
             )
 
-            for converted in status.get("successfulProjectsList", []):
+            conversion_failures = {}
+            # Response payload successfully converted project names will
+            # not likely match the actual project name, so all projects
+            # need to be checked if they are connected.
+            if status.get("migrationStatus") in ["OK", "PARTIAL"]:
+                for id in batch.disconnect_projects:
+                    repo_cfg = await ProjectRepoConfig.from_project_id(self._client, id)
+                    if await repo_cfg.is_scm_imported:
+                        if batch.check_sast_incremental_enabled(id):
+                            try:
+                                assert await self._enable_repo_incremental(id)
+                            except (Exception, BaseException) as ex:
+                                _log.warning(
+                                    f"Enabling SAST incremental scans for {repo_cfg.name} failed: {ex}",
+                                    exc_info=True,
+                                )
+                                raise ConversionException.failure_enable_sast_incrementals(
+                                    repo_cfg.name
+                                )
 
-                project_id = batch.get_project_id(converted)
-
-                if batch.check_sast_incremental_enabled(project_id):
-                    try:
-                        assert await self._enable_repo_incremental(project_id)
-                    except Exception as ex:
-                        _log.warning(
-                            f"Enabling SAST incremental scans for {converted} failed: {ex}",
-                            exc_info=True,
-                        )
-                        raise ConversionException.failure_enable_sast_incrementals(
-                            converted
-                        )
-
-                await writer.writerow(
-                    [batch.get_project_id(converted), converted, "SUCCESS"]
-                )
-                await batch.project_complete(project_id)
+                        await writer.writerow([id, repo_cfg.name, "SUCCESS"])
+                        await batch.project_complete(id)
+                    else:
+                        conversion_failures[id] = repo_cfg
 
             if batch.size > 0:
-                for failed in batch.batch_projects:
-                    await writer.writerow(
-                        [batch.get_project_id(failed), failed, "FAILED"]
-                    )
+                for id in batch.disconnect_projects:
+                    failed_cfg = conversion_failures.get(id)
+
+                    if failed_cfg is None:
+                        failed_cfg = await ProjectRepoConfig.from_project_id(
+                            self._client, id
+                        )
+
+                    await writer.writerow([failed_cfg.id, failed_cfg.name, "FAILED"])
 
     async def _process_batches(
         self,

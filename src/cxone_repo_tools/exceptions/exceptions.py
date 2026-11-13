@@ -55,6 +55,18 @@ class ConversionException(Exception):
             f"Project {project_name} ({project_id}) is not connected to scms {','.join(source_ids)}"
         )
 
+    @staticmethod
+    def rename_failed(project_id: str, project_target_name: str):
+        return ConversionException(
+            f"Attempt to rename project {project_id} to {project_target_name} failed."
+        )
+
+    @staticmethod
+    def disconnect_failed(project_id: str):
+        return ConversionException(
+            f"Failed to disconnect project {project_id} from an SCM."
+        )
+
 
 class AbortedConversionException(Exception):
 

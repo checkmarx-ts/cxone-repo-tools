@@ -156,8 +156,13 @@ class BatchConverter(RecoverableConverter):
                     self.__scm_data[int(self.__target_id)].repoBaseUrl,
                     self.__target_org,
                 )
+                target_project_name = self.__mapper.convert_project(
+                    self.__scm_data[await repo_cfg.scm_id].repoBaseUrl,
+                    await repo_cfg.repo_url,
+                    await repo_cfg.scm_org,
+                )
                 await cur_batches_by_org[self.__target_org].add(
-                    repo_cfg, target_repo_url
+                    repo_cfg, target_repo_url, target_project_name
                 )
                 convert_count += 1
 

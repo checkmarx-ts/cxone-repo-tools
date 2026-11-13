@@ -22,7 +22,8 @@ class ConversionBatch:
         self.__disconnect_projects = []
         self.__enable_sast_incremental_projects = []
         self.__project_convert_data = {}
-        self.__project_id_to_name_map = {}
+        self.__project_id_to_cur_name_map = {}
+        self.__project_id_to_target_name_map = {}
         self.__batch_id = str(uuid.uuid4())
         self.__file_lock = asyncio.Lock()
         self.__state_lock = asyncio.Lock()
@@ -36,7 +37,8 @@ class ConversionBatch:
             "target_scm_url": self.__target_scm_url,
             "disconnect": self.__disconnect_projects,
             "conversion": self.__project_convert_data,
-            "id2name": self.__project_id_to_name_map,
+            "id2name": self.__project_id_to_cur_name_map,
+            "targetnames": self.__project_id_to_target_name_map,
             "sast_inc_enabled": self.__enable_sast_incremental_projects,
         }
 
@@ -51,6 +53,7 @@ class ConversionBatch:
         disconnect: List[str],
         conversion: Dict,
         id2name: Dict,
+        targetnames: Dict,
         sast_inc_enabled: List[str],
     ) -> ConversionBatch:
         inst = ConversionBatch(
@@ -59,7 +62,8 @@ class ConversionBatch:
         inst.__batch_id = batch_id
         inst.__disconnect_projects = disconnect
         inst.__project_convert_data = conversion
-        inst.__project_id_to_name_map = id2name
+        inst.__project_id_to_cur_name_map = id2name
+        inst.__project_id_to_target_name_map = targetnames
         inst.__enable_sast_incremental_projects = sast_inc_enabled
         return inst
 
@@ -98,10 +102,13 @@ class ConversionBatch:
 
     @property
     def batch_projects(self) -> List[str]:
-        return list(self.__project_id_to_name_map.keys())
+        return list(self.__project_id_to_cur_name_map.keys())
 
     def get_project_id(self, project_name: str) -> str | None:
-        return self.__project_id_to_name_map.get(project_name)
+        return self.__project_id_to_cur_name_map.get(project_name)
+
+    def get_new_project_name(self, project_id: str) -> str | None:
+        return self.__project_id_to_target_name_map.get(project_id)
 
     def as_api_payload(self):
         payload = {
@@ -146,8 +153,8 @@ class ConversionBatch:
             if project_id in self.__disconnect_projects:
                 self.__disconnect_projects.remove(project_id)
 
-            if project_id in self.__project_id_to_name_map.keys():
-                del self.__project_id_to_name_map[project_id]
+            if project_id in self.__project_id_to_cur_name_map.keys():
+                del self.__project_id_to_cur_name_map[project_id]
 
             if project_id in self.__project_convert_data.keys():
                 del self.__project_convert_data[project_id]
@@ -161,10 +168,16 @@ class ConversionBatch:
                     self.__recovery_mode = False
                     await self.__remove_recover_file()
 
-    async def add(self, repo_cfg: ProjectRepoConfig, target_repo_url: str):
+    async def add(
+        self,
+        repo_cfg: ProjectRepoConfig,
+        target_repo_url: str,
+        target_project_name: str | None,
+    ):
         async with self.__state_lock:
             self.__disconnect_projects.append(repo_cfg.id)
-            self.__project_id_to_name_map[repo_cfg.name] = repo_cfg.id
+            self.__project_id_to_cur_name_map[repo_cfg.name] = repo_cfg.id
+            self.__project_id_to_target_name_map[repo_cfg.id] = target_project_name
 
             if await repo_cfg.sast_incremental_enabled:
                 self.__enable_sast_incremental_projects.append(repo_cfg.id)
