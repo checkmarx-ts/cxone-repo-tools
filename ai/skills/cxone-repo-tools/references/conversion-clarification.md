@@ -50,12 +50,19 @@
 
 * Projects are converted in batches of at most 15 projects.  The user does not have the
   ability to control the batch size.
-* The `--ignore-url-mismatch` option is used to ignore the mismatch error when converting
-  SCMs and the URL matching check fails.  This option is used to ignore differences
-  in SCM base-urls such as found in the following examples:
-  * `https://scm.mycompany.com` vs. `https://someuser@scm.mycompany.com` indicates the conversion
-    is for authentication to the same SCM but the base URL is not exactly the same.
-  * `https://some_other_user@scm.mycompany.com` vs. `https://someuser@scm.mycompany.com`
+* When a project SCM connection changes from the current SCM to a different SCM, even if
+  the target SCM is the same type, may require a mapping to convert the project's current
+  repository URL to a URL compatible with the target SCM instance.
+  * For example, Github has a repository URL format with a path of `organization/repository` but
+    Gitlab will have a repository path or `organization/group1/group2/.../groupN/repository` where
+    `organization` is really a top-level group that may have zero or more sub-groups.
+  * Project names may be arbitrary or structured to match the source SCMs repository path.  It
+    is optional to rename the project using a mapping composed of static text and fields extracted
+    from the source repository URL path.
+* If converting projects to the same SCM instance while only changing the
+  authentication method (e.g. changing Github OAuth to Github App), there is generally
+  no need to change project names or have a URL re-mapping.  The user will need
+  to evaluate if a mapping is needed.
 
 ## Conversion Timing
 
@@ -63,14 +70,13 @@ The time it takes to perform the complete conversion will depend on the number o
 in scope for conversion.  The more projects there are to convert, the more time it will take
 to fully perform the conversion.
 
-## Compatible Conversions
+## Conversion Specifics
 
 * The `source` SCM IDs cannot include the `target` SCM ID.
-* Conversions between `source` and `target` SCM IDs can only be done when all SCMs
-  are of the same `type`.
 * The SCM type `github` and `githubApp` are considered the same SCM `type`.
-* SCMs with differing types are currently not compatible for conversion due to the
-  need to map repository URLs to different SCM organization concepts.
+* Some target SCMs may require an administrator PAT to perform the conversion
+  correctly.  If a PAT is needed, the conversion will fail and a PAT can be
+  used on the next execution when the recovery files are processed.
 
 ## Filtering Selected Projects
 
@@ -89,10 +95,8 @@ to fully perform the conversion.
 
 ## Limitations
 
-* SCM connection management operations currently do not work with Cloud-hosted SCMs in Checkmarx One multi-tenant systems.  The Checkmarx One
-  APIs do not allow conversions for Multi-tenant Cloud SCM configurations.
 * If converting projects to an SCM that uses a GitHub App, it is a good idea to ensure the Github App is installed for
-  all organizations containing conversion repositories.
+  all organizations containing conversion target repositories.
 * If the GitHub App is not installed in an organization, you can execute recovery after installing the Github App
   in the organization.  You may need to wait several minutes before starting the recovery to allow Checkmarx One
   to re-authenticate with the target organization.
@@ -109,6 +113,9 @@ and convert them to the `target` SCM.
 There is a destructive step in the conversion process that disconnects a project from its repository before the project
 is re-connected to the new repository.  No scans are orchestrated by Checkmarx One for that project until it is
 re-connected to an SCM.
+
+Projects may be renamed before the conversion finishes.  If a conversion fails, the recovery will complete the
+conversion correctly despite projects not having the original names.
 
 ## Conversion Recovery
 
@@ -128,7 +135,8 @@ Recovery is how an interrupted or partially failed conversion is completed.
     configuration before it can be imported.
 * A completed recovery only indicates an attempt to complete conversions of the projects found in the recovery file.
   Zero or more of those projects may succeed and zero or more may fail on any given attempt.
-* Recovery files are not removed until all projects in them have been successfully converted.
+* Recovery files are not removed until all projects in them have been successfully converted or they are manually
+  deleted by the user.
 * Recovery failures can happen when repositories are misconfigured or have been renamed and the stored repository URL
   is no longer valid.  The recovery file can be edited to supply the correct repository URL before the next run.
 * If a project is disconnected and there is no recovery file for it, recovery is not possible.  The project must be

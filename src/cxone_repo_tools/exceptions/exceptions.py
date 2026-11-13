@@ -1,17 +1,9 @@
 from __future__ import annotations
-from typing import List, Iterable
+from typing import List
 from cxone_repo_tools.consts import DISCO_API_FLAG
 
 
 class ConversionException(Exception):
-
-    @staticmethod
-    def incompatible(
-        source_id: int, source_type: str, dest_id: int, dest_type: str
-    ) -> ConversionException:
-        return ConversionException(
-            f"Source SCM {source_id} ({source_type}) is not compatible for converting to SCM {dest_id} ({dest_type})"
-        )
 
     @staticmethod
     def target_scm_not_found(scm_id: int) -> ConversionException:
@@ -20,12 +12,6 @@ class ConversionException(Exception):
     @staticmethod
     def source_scms_not_found(scm_ids: List[int]) -> ConversionException:
         return ConversionException(f"Source SCM IDs {scm_ids} not found")
-
-    @staticmethod
-    def scm_base_urls_different(base_urls: Iterable):
-        return ConversionException(
-            f"SCM base urls domains must be the same: {base_urls}"
-        )
 
     @staticmethod
     def disconnect_api_ff_not_enabled():

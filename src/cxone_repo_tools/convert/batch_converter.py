@@ -1,14 +1,10 @@
 import logging
-from tqdm.asyncio import tqdm
-from typing import List, AsyncGenerator
+from typing import List
 from cxone_repo_tools.exceptions import ConversionException
 from cxone_repo_tools.client import CxOneRepoToolsClient
-from cxone_api.util import page_generator
-from cxone_api.low.code_repository_management import retrieve_scm_projects
-from cxone_api.low.projects import retrieve_list_of_projects
 from cxone_api.high.projects import ProjectRepoConfig
 from cxone_api.high.misc import FeatureFlagInspector
-from cxone_repo_tools.consts import MAX_RECORD_COUNT, DISCO_API_FLAG, MAX_NAMES_IN_QUERY
+from cxone_repo_tools.consts import DISCO_API_FLAG
 from cxone_repo_tools.index import ScmProjectIndexFactory
 from .batch import ConversionBatch
 from .mapping import ConversionMapper
@@ -74,17 +70,13 @@ class BatchConverter(RecoverableConverter):
 
     async def __validate_conversion(self):
         """Validates that a conversion can run: the disconnect API feature
-        flag is enabled, the source and target SCMs exist in the index, each
-        source SCM type is compatible with the target SCM type, and, unless
-        overridden, all the SCMs share a repository base URL.  The data of
-        the source and target SCMs is retained for the conversion.
+        flag is enabled, and the target SCM and every source SCM exist in the
+        index.  The data of the source and target SCMs is retained for the
+        conversion.
 
-        :param override_url_mismatch: True to skip the check that the source
-                                      and target SCMs share a repository base
-                                      URL.
-        :type override_url_mismatch: bool
-
-        :raises ConversionException: The conversion cannot run.
+        :raises ConversionException: The disconnect API feature flag is not
+                                     enabled, the target SCM is not found, or
+                                     one or more source SCMs are not found.
         """
         flag_insp = await FeatureFlagInspector.create(self._client)
 
@@ -94,11 +86,8 @@ class BatchConverter(RecoverableConverter):
         source_map = {}
         target_id_found = False
 
-        base_urls = {}
-
         for scm_id in await self.__index.get_scm_ids():
             scm = await self.__index.get_scm_data(scm_id)
-            base_urls[scm_id] = scm.repoBaseUrl
 
             add = False
             if scm_id in self.__source_ids:

@@ -21,7 +21,6 @@ class ConvertScmsCommand(Command):
         cxone-repo-tools convert-scms
                         [--report REPORT_FILE]
                         [--max-batches MAXBATCH]
-                        [--ignore-url-mismatch]
                         [--skip-recovery]
                         [--project-id PROJECTID | --project-name-match REGEX | --project-group-match REGEX]
                         [--regex-ignore-case]
