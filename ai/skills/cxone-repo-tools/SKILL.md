@@ -64,8 +64,7 @@ of the tool that may be ambiguous when considering information from
   command's options are in that command's own section of the same file, located as
   described above.  Do not assume a fixed set of commands; the list may grow.
 * Reference `references/conversion-clarification.md` for information about SCM connections,
-  how projects are converted between SCMs, the limits on which conversions are possible,
-  and how conversion recovery works.
+  how projects are converted between SCMs, and how conversion recovery works.
 * Reference `references/helpful-data.md` for information about data that the user can provide to assist in
   forming execution examples.
 * In this context, execution examples are textual data that the user can copy and paste in a terminal.

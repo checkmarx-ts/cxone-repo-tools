@@ -114,7 +114,7 @@ There is a destructive step in the conversion process that disconnects a project
 is re-connected to the new repository.  No scans are orchestrated by Checkmarx One for that project until it is
 re-connected to an SCM.
 
-Projects may be renamed before the conversion finishes.  If a conversion fails, the recovery will complete the
+Projects may be renamed as part of a failed conversion attempt.  If a conversion fails, the recovery will complete the
 conversion correctly despite projects not having the original names.
 
 ## Conversion Recovery
