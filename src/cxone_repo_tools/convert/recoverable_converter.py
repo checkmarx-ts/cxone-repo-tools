@@ -4,6 +4,7 @@ from tqdm.asyncio import tqdm
 from typing import List, Dict
 from cxone_repo_tools.exceptions import ConversionException
 from cxone_repo_tools.client import CxOneRepoToolsClient
+from cxone_api.exceptions import CommunicationException
 from cxone_api.util import json_on_ok
 from cxone_api.low.projects import update_specific_project_fields
 from cxone_api.low.code_repository_management import disconnect_project_from_scm
@@ -76,8 +77,35 @@ class RecoverableConverter:
     async def convert_project_and_wait(
         client: CxOneRepoToolsClient, payload: Dict
     ) -> Dict:
+        """Submits a project conversion request and waits for the conversion
+        to finish.
 
-        convert_response = json_on_ok(await convert_a_project(client, payload))
+        :param client: The client used to make Checkmarx One API calls.
+        :type client: CxOneRepoToolsClient
+
+        :param payload: The conversion API payload.  It can contain the SCM
+                        token.
+        :type payload: Dict
+
+        :return: The final conversion status.
+        :rtype: Dict
+
+        :raises ConversionException: The conversion request failed after all
+                                     retries.
+        :raises ResponseException: A conversion API response was not
+                                   successful.
+        """
+        try:
+            response = await convert_a_project(client, payload)
+        except CommunicationException as ex:
+            # The exception message includes the request payload, which can
+            # contain the SCM token.  It is replaced, and "from None" keeps it
+            # out of the exception chain so tracebacks cannot show it.
+            raise ConversionException.conversion_request_failed(
+                ex.response.status_code if ex.response is not None else None
+            ) from None
+
+        convert_response = json_on_ok(response)
         process_id = convert_response.get("processId")
 
         _log.info(f"Process Id: {process_id} : {convert_response.get('message')}")

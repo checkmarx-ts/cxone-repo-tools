@@ -6,6 +6,39 @@ from cxone_repo_tools.consts import DISCO_API_FLAG
 class ConversionException(Exception):
 
     @staticmethod
+    def conversion_request_failed(status_code: int | None) -> ConversionException:
+        """Creates the exception raised when the project conversion API request
+        fails after all retries.
+
+        :param status_code: The HTTP status of the last response, or None if no
+                            response was received.
+        :type status_code: int | None
+
+        :rtype: ConversionException
+        """
+        return ConversionException(
+            "The project conversion request failed "
+            f"(HTTP status {status_code if status_code is not None else 'none'})."
+        )
+
+    @staticmethod
+    def connection_failed(project_id: str, scm_id: int) -> ConversionException:
+        """Creates the exception raised when a project could not be connected
+        to an SCM.
+
+        :param project_id: The ID of the project.
+        :type project_id: str
+
+        :param scm_id: The ID of the SCM.
+        :type scm_id: int
+
+        :rtype: ConversionException
+        """
+        return ConversionException(
+            f"Project {project_id} was not connected to SCM {scm_id}."
+        )
+
+    @staticmethod
     def target_scm_not_found(scm_id: int) -> ConversionException:
         return ConversionException(f"Target SCM ID {scm_id} not found")
 

@@ -1,10 +1,18 @@
+import logging
 from typing import List
 from cxone_repo_tools.convert import BatchConverter
 from cxone_repo_tools.client import CxOneRepoToolsClient
+from cxone_api.exceptions import (
+    AuthException,
+    CommunicationException,
+    ResponseException,
+)
 from cxone_api.util import json_on_ok
 from cxone_api.low.repos_manager import get_scm_by_id
 from cxone_api.low.projects import retrieve_project_info
 from cxone_api.high.projects import ProjectRepoConfig
+
+_log = logging.getLogger(__name__)
 
 
 class Connector:
@@ -24,8 +32,9 @@ class Connector:
         repo_name: str = None,
         protected_branches: List[str] = [],
         token: str | None = None,
-    ):
-        """Connects a manual project to an SCM with the conversion API.
+    ) -> bool:
+        """Connects a manual project to an SCM with the conversion API.  Errors
+        are logged rather than raised.
 
         :param client: The client used to make Checkmarx One API calls.
         :type client: CxOneRepoToolsClient
@@ -68,43 +77,68 @@ class Connector:
                       it is not None.  Defaults to None.
         :type token: str | None, optional
 
-        :raises ResponseException: A Checkmarx One API call failed.
+        :return: True if the project was connected, False if an error occurred.
+                 The error is logged.
+        :rtype: bool
         """
+        try:
+            scm_data = json_on_ok(await get_scm_by_id(client, scm_id))
+            project_name = json_on_ok(
+                await retrieve_project_info(client, project_id)
+            ).get("name")
 
-        scm_data = json_on_ok(await get_scm_by_id(client, scm_id))
-        project_name = json_on_ok(await retrieve_project_info(client, project_id)).get(
-            "name"
-        )
+            if repo_name is None:
+                repo_name = project_name
 
-        if repo_name is None:
-            repo_name = project_name
+            repo_base_url = scm_data.get("repoBaseUrl")
 
-        repo_base_url = scm_data.get("repoBaseUrl")
+            payload = {
+                "scmType": scm_data.get("type"),
+                "scmOnPremUrl": repo_base_url,
+                "orgIdentity": org,
+                "projects": [
+                    {
+                        "cxProjectId": project_id,
+                        "scmRepositoryUrl": repo_base_url.rstrip("/")
+                        + "/"
+                        + repo_name.lstrip("/").rstrip("/"),
+                        "protectedBranches": protected_branches,
+                        "types": engines,
+                        "scaAutoPrEnabled": auto_pr,
+                        "decoratePullRequests": pr_decorate,
+                        "webhookEnabled": webhook,
+                    }
+                ],
+            }
 
-        payload = {
-            "scmType": scm_data.get("type"),
-            "scmOnPremUrl": repo_base_url,
-            "orgIdentity": org,
-            "projects": [
-                {
-                    "cxProjectId": project_id,
-                    "scmRepositoryUrl": repo_base_url.rstrip("/")
-                    + "/"
-                    + repo_name.lstrip("/").rstrip("/"),
-                    "protectedBranches": protected_branches,
-                    "types": engines,
-                    "scaAutoPrEnabled": auto_pr,
-                    "decoratePullRequests": pr_decorate,
-                    "webhookEnabled": webhook,
-                }
-            ],
-        }
+            if token is not None:
+                payload["token"] = token
 
-        if token is not None:
-            payload["token"] = token
+            await BatchConverter.convert_project_and_wait(client, payload)
 
-        await BatchConverter.convert_project_and_wait(client, payload)
+            if sast_incremental:
+                repo_cfg = await ProjectRepoConfig.from_project_id(client, project_id)
+                await repo_cfg.update_repository_toggles(sastIncrementalScan=True)
 
-        if sast_incremental:
-            repo_cfg = await ProjectRepoConfig.from_project_id(client, project_id)
-            await repo_cfg.update_repository_toggles(sastIncrementalScan=True)
+            return True
+        # cxone-async-api exceptions derive from BaseException, so they are
+        # named explicitly; Exception alone would not catch them.
+        except CommunicationException as ex:
+            # The exception message includes the request payload, which can
+            # contain the SCM token, so only the type and HTTP status are logged.
+            status = ex.response.status_code if ex.response is not None else "none"
+            _log.error(
+                f"Failed to connect project {project_id} to SCM {scm_id}: "
+                f"{type(ex).__name__} (HTTP status {status})"
+            )
+        except (  # pylint: disable=broad-exception-caught
+            Exception,
+            ResponseException,
+            AuthException,
+        ) as ex:
+            _log.error(
+                f"Failed to connect project {project_id} to SCM {scm_id}: {ex}",
+                exc_info=True,
+            )
+
+        return False

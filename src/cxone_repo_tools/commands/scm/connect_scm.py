@@ -1,9 +1,15 @@
+import logging
 from docopt import docopt, ParsedOptions
 from typing import List
 from cxone_repo_tools.commands.base import Command
-from cxone_repo_tools.exceptions import AbortedConversionException
+from cxone_repo_tools.exceptions import (
+    AbortedConversionException,
+    ConversionException,
+)
 from cxone_repo_tools.connection import Connector
 from .scm_token import get_scm_token
+
+_log = logging.getLogger(__name__)
 
 
 class ConnectScmCommand(Command):
@@ -106,6 +112,7 @@ class ConnectScmCommand(Command):
                                             parameters were provided, or the
                                             SCM PAT option is provided but the
                                             PAT is missing or empty.
+        :raises ConversionException: The project was not connected to the SCM.
         """
         parsed_args = docopt(
             ConnectScmCommand.__doc__,
@@ -118,7 +125,7 @@ class ConnectScmCommand(Command):
 
         scm_token = get_scm_token(parsed_args["--token"], parsed_args["--token-env"])
 
-        await Connector.connect(
+        connected = await Connector.connect(
             self.client,
             int(parsed_args["--scm-id"]),
             parsed_args["--project-id"],
@@ -131,6 +138,16 @@ class ConnectScmCommand(Command):
             repo_name=parsed_args.get("--repo-name"),
             protected_branches=parsed_args.get("--protected-branch"),
             token=scm_token,
+        )
+
+        if not connected:
+            raise ConversionException.connection_failed(
+                parsed_args["--project-id"], parsed_args["--scm-id"]
+            )
+
+        _log.info(
+            f"Project {parsed_args['--project-id']} connected to SCM "
+            f"{parsed_args['--scm-id']}."
         )
 
     @staticmethod
