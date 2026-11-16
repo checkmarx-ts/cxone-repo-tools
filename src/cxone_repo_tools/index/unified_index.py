@@ -1,7 +1,7 @@
-from asyncio import Lock, gather
-from typing import Dict, List, Tuple
+from asyncio import Lock, gather, create_task, Event
+from typing import Dict, List, AsyncGenerator
 from cxone_api.high.projects import ProjectRepoConfig
-from cxone_api.low.projects import retrieve_list_of_projects
+from cxone_api.low.code_repository_management import retrieve_scm_projects
 from cxone_api.util import page_generator
 from cxone_repo_tools.client import CxOneRepoToolsClient
 from cxone_repo_tools.consts import MAX_RECORD_COUNT
@@ -9,12 +9,15 @@ from .scm_project_index import ScmProjectIndex
 
 
 class UnifiedIndex(ScmProjectIndex):
-    """An index of SCM-connected projects for multi-tenant Checkmarx One
-    regions and for single-tenant deployments on CxOne 3.70.1 or later, which
-    have the unified project APIs.
+    """An index of SCM-connected projects built from the projects the API
+    returns as assigned to each SCM.  `ScmProjectIndexFactory` uses it for
+    multi-tenant clients and for single-tenant deployments on CxOne 3.70.1 or
+    later.
 
-    Every project in the tenant is retrieved and grouped by the SCM ID of its
-    repository configuration.  Projects without an SCM ID are not indexed.
+    The project IDs assigned to every SCM are indexed on first use.  The
+    ProjectRepoConfig instances for an SCM's projects are loaded when that
+    SCM is first requested and cached afterwards; the projects of SCMs that
+    are never requested are not loaded.
 
     :param client: The client used to make Checkmarx One API calls.
     :type client: CxOneRepoToolsClient
@@ -37,55 +40,85 @@ class UnifiedIndex(ScmProjectIndex):
         super().__init__(client, threads=threads)
         self.__projects_by_scm: Dict[int, List[ProjectRepoConfig]] | None = None
         self.__indexing_lock = Lock()
+        self.__indexing_entry_lock = Lock()
+        self.__load_tasks = {}
+        self.__load_events = {}
 
-    async def __resolve_scm_id(
-        self, cfg: ProjectRepoConfig
-    ) -> Tuple[int | None, ProjectRepoConfig]:
-        """Resolves the SCM ID of a project's repository configuration.
+    async def __load_scm(self, scm_id: int, event: Event):
+        await event.wait()
 
-        :param cfg: The project's repository configuration.
-        :type cfg: ProjectRepoConfig
+        async def __load_ProjectRepoConfig(pid: str):
+            async with self._semaphore:
+                return await ProjectRepoConfig.from_project_id(self._client, pid)
 
-        :return: The SCM ID, or None if the project is not connected to an SCM
-                 or its SCM credentials have expired, paired with `cfg`.
-        :rtype: Tuple[int | None, ProjectRepoConfig]
-        """
+        loaded_list = await gather(
+            *[__load_ProjectRepoConfig(pid) for pid in self.__projects_by_scm[scm_id]]
+        )
+
+        async with self.__indexing_entry_lock:
+            self.__projects_by_scm[scm_id] = loaded_list
+
+    async def __populate_index_for_scm(self, scm_id: int, list_gen: AsyncGenerator):
         async with self._semaphore:
-            return await cfg.scm_id, cfg
+
+            async for entry in list_gen:
+                project_id = entry.get("cxProjectId")
+
+                async with self.__indexing_entry_lock:
+                    self.__projects_by_scm.setdefault(scm_id, []).append(project_id)
+
+                    if scm_id not in self.__load_tasks.keys():
+                        self.__load_events[scm_id] = Event()
+                        self.__load_tasks[scm_id] = create_task(
+                            self.__load_scm(scm_id, self.__load_events[scm_id])
+                        )
 
     async def __init_index(self):
-        """Builds the SCM-to-projects index by iterating every project in the
-        tenant, discarding projects with an SCM ID of None.  The index is built
-        once; later calls return immediately.  If building fails, no index is
-        stored and the next call tries again.
+        """Builds the index of the project IDs assigned to each SCM.  The index
+        is built once; later calls return immediately.
+
+        :raises Exception: A cxone-async-api call made while building the
+                           index failed.  The exception is propagated, the
+                           partial index is discarded, and the next call
+                           builds the index again.
         """
         async with self.__indexing_lock:
             if self.__projects_by_scm is not None:
                 return
 
-            cfgs = [
-                await ProjectRepoConfig.from_project_json(self._client, project_json)
-                async for project_json in page_generator(
-                    retrieve_list_of_projects,
-                    "projects",
-                    client=self._client,
-                    limit=MAX_RECORD_COUNT,
+            self.__projects_by_scm = {}
+            try:
+                project_generators = [
+                    (
+                        scm_id,
+                        page_generator(
+                            retrieve_scm_projects,
+                            "projects",
+                            client=self._client,
+                            limit=MAX_RECORD_COUNT,
+                            scmid=scm_id,
+                        ),
+                    )
+                    for scm_id in await self.get_scm_ids()
+                ]
+
+                await gather(
+                    *[self.__populate_index_for_scm(*gen) for gen in project_generators]
                 )
-            ]
-
-            index = {}
-            for scm_id, cfg in await gather(
-                *[self.__resolve_scm_id(cfg) for cfg in cfgs]
-            ):
-                if scm_id is not None:
-                    index.setdefault(scm_id, []).append(cfg)
-
-            self.__projects_by_scm = index
+            except Exception:
+                # Discard the partial index so the next call rebuilds it.
+                for task in self.__load_tasks.values():
+                    task.cancel()
+                self.__load_tasks.clear()
+                self.__load_events.clear()
+                self.__projects_by_scm = None
+                raise
 
     async def associated_projects(self, scm_id: int) -> List[ProjectRepoConfig]:
-        """Retrieves the projects connected to an SCM.  Every project in the
-        tenant is retrieved and indexed on the first call; later calls are
-        answered from the index.
+        """Retrieves the projects connected to an SCM.  The index of project
+        IDs for every SCM is built on the first call.  The ProjectRepoConfig
+        instances for `scm_id` are loaded on the first request for that SCM;
+        later calls return the cached list.
 
         :param scm_id: The ID of the SCM.
         :type scm_id: int
@@ -94,6 +127,19 @@ class UnifiedIndex(ScmProjectIndex):
                  the SCM, or an empty list if the SCM has no connected
                  projects or `scm_id` is not a known SCM.
         :rtype: List[ProjectRepoConfig]
+
+        :raises Exception: A cxone-async-api call failed while building the
+                           index or loading the SCM's projects.
         """
         await self.__init_index()
+
+        # Lazy load the ProjectRepoConfig instances since a conversion may not
+        # need to load all scm projects.
+        async with self.__indexing_lock:
+            if scm_id in self.__load_events.keys():
+                self.__load_events[scm_id].set()
+                await self.__load_tasks[scm_id]
+                del self.__load_tasks[scm_id]
+                del self.__load_events[scm_id]
+
         return self.__projects_by_scm.get(scm_id, [])

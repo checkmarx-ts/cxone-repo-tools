@@ -23,7 +23,7 @@ class ScmProjectIndexFactory:
 
         Version checks are done on for single-tenant only since deployments
         lag behind multi-tenant deployments by an unknown number of versions.
-        
+
         CxOne 3.70.1 unified the API that returns the projects assigned to an
         SCM so that it also returns the project ID.  A single-tenant
         deployment on CxOne 3.70.1 or later always gets a UnifiedIndex.
