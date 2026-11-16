@@ -1,11 +1,11 @@
-import logging
+import asyncio, logging
 from typing import List
 from cxone_repo_tools.exceptions import ConversionException
 from cxone_repo_tools.client import CxOneRepoToolsClient
 from cxone_api.high.projects import ProjectRepoConfig
 from cxone_api.high.misc import FeatureFlagInspector
 from cxone_repo_tools.consts import DISCO_API_FLAG
-from cxone_repo_tools.index import ScmProjectIndexFactory
+from cxone_repo_tools.index import ScmProjectIndex, ScmProjectIndexFactory
 from .batch import ConversionBatch
 from .mapping import ConversionMapper
 from .recoverable_converter import RecoverableConverter
@@ -28,8 +28,8 @@ class BatchConverter(RecoverableConverter):
         report_path: str,
         threads: int = 2,
     ):
-        """Initializes the converter and creates the SCM project index that
-        matches the deployment the client is connected to.
+        """Initializes the converter.  The SCM project index that matches the
+        deployment the client is connected to is created on first use.
 
         :param client: The client used to make Checkmarx One API calls.
         :type client: CxOneRepoToolsClient
@@ -63,10 +63,29 @@ class BatchConverter(RecoverableConverter):
         self.__target_org = target_org
         self.__target_id = target_id
         self.__mapper = mapper
-        self.__index = ScmProjectIndexFactory.create_index(client, threads=threads)
+        self.__index_threads = threads
+        self.__index_instance: ScmProjectIndex | None = None
+        self.__index_lock = asyncio.Lock()
         self.__conversion_cfgs = None
 
         self.__scm_data = {}
+
+    @property
+    async def __index(self) -> ScmProjectIndex:
+        """The SCM project index for the deployment the client is connected to.
+        It is created with `ScmProjectIndexFactory.create_index` the first time
+        it is accessed and reused afterwards.
+
+        :rtype: ScmProjectIndex
+
+        :raises ResponseException: The index could not be created.
+        """
+        async with self.__index_lock:
+            if self.__index_instance is None:
+                self.__index_instance = await ScmProjectIndexFactory.create_index(
+                    self._client, threads=self.__index_threads
+                )
+        return self.__index_instance
 
     async def __validate_conversion(self):
         """Validates that a conversion can run: the disconnect API feature
@@ -86,8 +105,9 @@ class BatchConverter(RecoverableConverter):
         source_map = {}
         target_id_found = False
 
-        for scm_id in await self.__index.get_scm_ids():
-            scm = await self.__index.get_scm_data(scm_id)
+        index = await self.__index
+        for scm_id in await index.get_scm_ids():
+            scm = await index.get_scm_data(scm_id)
 
             add = False
             if scm_id in self.__source_ids:
@@ -187,9 +207,9 @@ class BatchConverter(RecoverableConverter):
         else:
             self.__conversion_cfgs = []
             for source_id in self.__source_ids:
-                self.__conversion_cfgs += await self.__index.associated_projects(
-                    int(source_id)
-                )
+                self.__conversion_cfgs += await (
+                    await self.__index
+                ).associated_projects(int(source_id))
 
         await self.__validate_conversion()
         await self.__convert_projects(max_batches=max_batches)

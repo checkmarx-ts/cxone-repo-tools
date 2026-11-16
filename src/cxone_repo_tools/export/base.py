@@ -16,8 +16,8 @@ class BaseExport:
     """
 
     def __init__(self, client: CxOneRepoToolsClient, *, threads: int = 2):
-        """Initializes the export and creates the SCM project index that
-        matches the deployment the client is connected to.
+        """Initializes the export.  The SCM project index that matches the
+        deployment the client is connected to is created on first use.
 
         :param client: The client used to make Checkmarx One API calls.
         :type client: CxOneRepoToolsClient
@@ -28,7 +28,9 @@ class BaseExport:
         """
         self.__client = client
         self.__threads = asyncio.Semaphore(threads)
-        self.__index = ScmProjectIndexFactory.create_index(client, threads=threads)
+        self.__index_threads = threads
+        self.__index_instance: ScmProjectIndex | None = None
+        self.__index_lock = asyncio.Lock()
 
     @property
     def _thread_semaphore(self) -> asyncio.Semaphore:
@@ -39,12 +41,32 @@ class BaseExport:
         return self.__client
 
     @property
-    def _index(self) -> ScmProjectIndex:
-        """The index of SCMs and the projects connected to them.
+    async def __index(self) -> ScmProjectIndex:
+        """The SCM project index for the deployment the client is connected to.
+        It is created with `ScmProjectIndexFactory.create_index` the first time
+        it is accessed and reused afterwards.
 
         :rtype: ScmProjectIndex
+
+        :raises ResponseException: The index could not be created.
         """
-        return self.__index
+        async with self.__index_lock:
+            if self.__index_instance is None:
+                self.__index_instance = await ScmProjectIndexFactory.create_index(
+                    self.__client, threads=self.__index_threads
+                )
+        return self.__index_instance
+
+    @property
+    async def _index(self) -> ScmProjectIndex:
+        """The index of SCMs and the projects connected to them, created on
+        first use.  Subclasses use ``(await self._index)``.
+
+        :rtype: ScmProjectIndex
+
+        :raises ResponseException: The index could not be created.
+        """
+        return await self.__index
 
     async def export(self, export_csv_file: str) -> None:
         await self.__write_csv(export_csv_file)

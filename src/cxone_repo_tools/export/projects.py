@@ -50,7 +50,9 @@ class ProjectAssignmentExport(ScmExport):
         :return: The CSV row, keyed by field name.
         :rtype: Dict
         """
-        row = await super()._generate_row(await self._index.get_scm_data(scm_id))
+        row = await super()._generate_row(
+            await (await self._index).get_scm_data(scm_id)
+        )
         groups = ""
         if repo_cfg.groups is not None and len(repo_cfg.groups) > 0:
             group_list = []
@@ -92,7 +94,7 @@ class ProjectAssignmentExport(ScmExport):
         :param writer: The CSV writer.
         :type writer: aiocsv.AsyncDictWriter
         """
-        repo_cfgs = await self._index.associated_projects(scm_id)
+        repo_cfgs = await (await self._index).associated_projects(scm_id)
         async with self._thread_semaphore:
             for repo_cfg in repo_cfgs:
                 row = await self._generate_row(scm_id, repo_cfg)
@@ -109,7 +111,7 @@ class ProjectAssignmentExport(ScmExport):
         await tqdm.gather(
             *[
                 self.__write_rows_for_scm(scm_id, writer)
-                for scm_id in await self._index.get_scm_ids()
+                for scm_id in await (await self._index).get_scm_ids()
             ],
             desc="Exporting data",
         )

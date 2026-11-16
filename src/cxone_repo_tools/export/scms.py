@@ -32,6 +32,7 @@ class ScmExport(BaseExport):
         :param writer: The CSV writer.
         :type writer: aiocsv.AsyncDictWriter
         """
-        for scm_id in await self._index.get_scm_ids():
-            scm = await self._index.get_scm_data(scm_id)
+        index = await self._index
+        for scm_id in await index.get_scm_ids():
+            scm = await index.get_scm_data(scm_id)
             await writer.writerow(await self._generate_row(scm))
