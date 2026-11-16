@@ -8,14 +8,13 @@ from cxone_repo_tools.consts import MAX_RECORD_COUNT
 from .scm_project_index import ScmProjectIndex
 
 
-class MultiTenantIndex(ScmProjectIndex):
-    """An index of SCM-connected projects for a multi-tenant Checkmarx One
-    region.
+class UnifiedIndex(ScmProjectIndex):
+    """An index of SCM-connected projects for multi-tenant Checkmarx One
+    regions and for single-tenant deployments on CxOne 3.70.1 or later, which
+    have the unified project APIs.
 
-    Multi-tenant regions have no API that lists the projects connected to an
-    SCM, so every project in the tenant is retrieved and grouped by the SCM ID
-    of its repository configuration.  Projects without an SCM ID are not
-    indexed.
+    Every project in the tenant is retrieved and grouped by the SCM ID of its
+    repository configuration.  Projects without an SCM ID are not indexed.
 
     :param client: The client used to make Checkmarx One API calls.
     :type client: CxOneRepoToolsClient

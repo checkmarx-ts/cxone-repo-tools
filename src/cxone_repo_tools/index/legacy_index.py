@@ -9,9 +9,12 @@ from cxone_api.high.projects import ProjectRepoConfig
 from cxone_repo_tools.consts import MAX_RECORD_COUNT, MAX_NAMES_IN_QUERY
 
 
-class SingleTenantIndex(ScmProjectIndex):
-    """An index of SCM-connected projects for a single-tenant Checkmarx One
-    deployment.
+class LegacyIndex(ScmProjectIndex):
+    """An index of SCM-connected projects for single-tenant Checkmarx One
+    deployments earlier than CxOne 3.70.1, which do not have the unified API
+    that returns the project ID with the projects assigned to an SCM.  The
+    projects assigned to each SCM are listed by name, and their project data
+    is then retrieved by name.
 
     :param client: The client used to make Checkmarx One API calls.
     :type client: CxOneRepoToolsClient
