@@ -41,10 +41,11 @@ class ConnectScmCommand(Command):
     --scm-org ORG                 The organization name in the SCM containing the
                                   repository corresponding to the project.
 
-    --repo-name REPONAME          The repository name.  If not provided, the name of the
-                                  project will be used as the repository name.  If the
-                                  repository is not found in the SCM, the connection
-                                  will fail.
+    --repo-name REPONAME          The repository name.  If not provided, the project's
+                                  name is used as the repository name: the new name
+                                  when --project-name is given, otherwise the current
+                                  name.  If the repository is not found in the SCM, the
+                                  connection will fail.
 
                                   The repo name should be the portion of the repo URL
                                   after the SCM URL and not include the .git extension.

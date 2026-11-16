@@ -21,8 +21,9 @@ class ScmProjectIndexFactory:
         """Creates an SCM project index for the deployment the client is
         connected to.
 
-        Version checks are done on for single-tenant only since deployments
-        lag behind multi-tenant deployments by an unknown number of versions.
+        Version checks are done for single-tenant deployments only, since
+        single-tenant deployments lag behind multi-tenant deployments by an
+        unknown number of versions.
 
         CxOne 3.70.1 unified the API that returns the projects assigned to an
         SCM so that it also returns the project ID.  A single-tenant

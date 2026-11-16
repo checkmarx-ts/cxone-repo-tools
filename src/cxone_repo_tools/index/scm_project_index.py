@@ -44,8 +44,19 @@ class ScmProjectIndex:
         return self.__threads
 
     async def get_scm_data(self, scm_id: int) -> DotWiz | None:
+        """Retrieves the data of an SCM configured in the tenant.  The SCM
+        list is retrieved on the first call and cached afterwards.
+
+        :param scm_id: The ID of the SCM.
+        :type scm_id: int
+
+        :return: The SCM's data, with its fields available as attributes, or
+                 None if `scm_id` is not a known SCM.
+        :rtype: DotWiz | None
+        """
         await self.__index_scms()
-        return DotWiz(self.__scm_index.get(scm_id))
+        scm = self.__scm_index.get(scm_id)
+        return DotWiz(scm) if scm is not None else None
 
     async def get_scm_ids(self) -> List[int]:
         """Retrieves the IDs of every SCM configured in the tenant.  The SCM
