@@ -117,6 +117,10 @@ class RecoverableConverter:
                 _log.info(
                     f"Process {process_id} complete: {status.get('migrationStatus')} {status.get('summary')}"
                 )
+                failed_list = status.get("failedProjectList", [])
+                if len(failed_list) > 0:
+                    for fmsg in failed_list:
+                        _log.error(fmsg)
                 return status
             else:
                 _log.debug(f"Waiting for migration processId {process_id} to finish.")

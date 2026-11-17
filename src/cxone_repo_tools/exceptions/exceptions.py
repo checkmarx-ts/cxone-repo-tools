@@ -218,24 +218,6 @@ class MappingException(Exception):
         )
 
     @staticmethod
-    def url_not_under_base(url: str, base_url: str) -> MappingException:
-        """Creates the exception raised when a repository URL is not under the
-        expected base URL.
-
-        :param url: The repository URL.
-        :type url: str
-
-        :param base_url: The base URL the repository URL was expected to be
-                         under.
-        :type base_url: str
-
-        :rtype: MappingException
-        """
-        return MappingException(
-            f"Repository URL [{url}] is not under base URL [{base_url}]"
-        )
-
-    @staticmethod
     def org_not_in_url(url: str, org: str) -> MappingException:
         """Creates the exception raised when the path segment after the base
         URL of a repository URL is not the expected organization.

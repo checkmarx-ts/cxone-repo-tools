@@ -60,15 +60,17 @@ class DefaultConversionMapperTestCase(unittest.TestCase):
             self.convert("https://github.com/acme"), "https://ghe.example.com/new-org"
         )
 
-    def test_url_on_different_host_raises(self):
-        with self.assertRaises(MappingException) as ctx:
-            self.convert("https://gitlab.com/acme/widgets")
-        self.assertIn("not under base URL", str(ctx.exception))
+    def test_url_on_different_host_is_converted(self):
+        self.assertEqual(
+            self.convert("https://gitlab.com/acme/widgets"),
+            "https://ghe.example.com/new-org/widgets",
+        )
 
-    def test_url_sharing_base_prefix_but_not_under_base_raises(self):
-        with self.assertRaises(MappingException) as ctx:
-            self.convert("https://github.community/acme/widgets")
-        self.assertIn("not under base URL", str(ctx.exception))
+    def test_url_on_host_sharing_base_prefix_is_converted(self):
+        self.assertEqual(
+            self.convert("https://github.community/acme/widgets"),
+            "https://ghe.example.com/new-org/widgets",
+        )
 
     def test_url_equal_to_base_raises(self):
         with self.assertRaises(MappingException):
@@ -83,10 +85,11 @@ class DefaultConversionMapperTestCase(unittest.TestCase):
         with self.assertRaises(MappingException):
             self.convert("https://github.com/acme-labs/widgets")
 
-    def test_url_with_different_scheme_raises(self):
-        with self.assertRaises(MappingException) as ctx:
-            self.convert("http://github.com/acme/widgets")
-        self.assertIn("not under base URL", str(ctx.exception))
+    def test_url_with_different_scheme_is_converted(self):
+        self.assertEqual(
+            self.convert("http://github.com/acme/widgets"),
+            "https://ghe.example.com/new-org/widgets",
+        )
 
     def test_base_urls_with_paths(self):
         self.assertEqual(
@@ -100,7 +103,7 @@ class DefaultConversionMapperTestCase(unittest.TestCase):
             "https://new.example.com/git/new-org/widgets",
         )
 
-    def test_url_outside_base_url_path_raises(self):
+    def test_url_outside_base_url_path_needs_org_as_first_segment(self):
         with self.assertRaises(MappingException) as ctx:
             self.mapper.convert_repo_url(
                 "https://scm.example.com/gitlab",
@@ -109,7 +112,31 @@ class DefaultConversionMapperTestCase(unittest.TestCase):
                 "https://new.example.com",
                 "new-org",
             )
-        self.assertIn("not under base URL", str(ctx.exception))
+        self.assertIn("not in organization [acme]", str(ctx.exception))
+
+    def test_url_outside_base_url_path_with_org_first_is_converted(self):
+        self.assertEqual(
+            self.mapper.convert_repo_url(
+                "https://scm.example.com/gitlab",
+                "https://git.example.com/acme/widgets",
+                "acme",
+                "https://new.example.com",
+                "new-org",
+            ),
+            "https://new.example.com/new-org/widgets",
+        )
+
+    def test_base_url_path_skipped_on_different_host(self):
+        self.assertEqual(
+            self.mapper.convert_repo_url(
+                "https://scm.example.com/gitlab",
+                "https://git.example.com/GitLab/acme/widgets",
+                "acme",
+                "https://new.example.com",
+                "new-org",
+            ),
+            "https://new.example.com/new-org/widgets",
+        )
 
     def test_query_and_fragment_kept(self):
         self.assertEqual(
@@ -175,14 +202,17 @@ class ConversionMapperSubclassTestCase(unittest.TestCase):
             ".",
         )
 
-    def test_source_repo_path_validates_base_url_and_org(self):
-        mapper = DefaultConversionMapper()
-        with self.assertRaises(MappingException):
-            mapper._source_repo_path(
+    def test_source_repo_path_does_not_check_base_url(self):
+        self.assertEqual(
+            DefaultConversionMapper()._source_repo_path(
                 "https://github.com", "https://gitlab.com/acme/repo", "acme"
-            )
+            ),
+            "repo",
+        )
+
+    def test_source_repo_path_validates_org(self):
         with self.assertRaises(MappingException):
-            mapper._source_repo_path(
+            DefaultConversionMapper()._source_repo_path(
                 "https://github.com", "https://github.com/other/repo", "acme"
             )
 
@@ -208,7 +238,7 @@ class ConversionMapperSubclassTestCase(unittest.TestCase):
         mapper = RecordingMapper("x", project_name="renamed")
         with self.assertRaises(MappingException):
             mapper.convert_project(
-                "https://github.com", "https://gitlab.com/acme/widgets", "acme"
+                "https://github.com", "https://github.com/other/widgets", "acme"
             )
         self.assertEqual(mapper.received_project, [])
 

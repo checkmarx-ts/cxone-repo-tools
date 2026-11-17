@@ -91,9 +91,8 @@ class ConversionMapper(ABC):
                  name is not changed.
         :rtype: str | None
 
-        :raises MappingException: The source repository URL is not under the
-                                  source base URL, or the path segment after
-                                  the base URL is not the source organization.
+        :raises MappingException: The path segment after the source base URL's
+                                  path is not the source organization.
         """
         return self._map_project_name(
             self._source_repo_path(
@@ -108,11 +107,15 @@ class ConversionMapper(ABC):
         source_repo_org: str,
     ) -> str:
         """Finds the path that follows the organization in a source repository
-        URL, after checking that the URL is under the source base URL and
-        that the organization follows the base URL.
+        URL, after checking that the organization is the first path segment
+        after the source base URL's path.
 
-        The scheme, host, base path, and organization are compared without
-        regard to case, and a trailing slash on the base URL is ignored.
+        The source repository URL is not required to be under the source base
+        URL: its scheme and host are not compared.  If the URL's path starts
+        with the base URL's path segments, those segments are skipped;
+        otherwise the organization must be the first segment of the URL's
+        path.  The base path and organization are compared without regard to
+        case, and a trailing slash on the base URL is ignored.
 
         :param source_repo_base_url: The base URL of the source SCM, for
                                      example ``https://github.com``.
@@ -123,7 +126,7 @@ class ConversionMapper(ABC):
 
         :param source_repo_org: The organization that owns the source
                                 repository.  It must be the path segment that
-                                follows the source base URL.
+                                follows the source base URL's path.
         :type source_repo_org: str
 
         :return: The relative POSIX path that follows the source organization,
@@ -131,27 +134,17 @@ class ConversionMapper(ABC):
                  ends at the organization.
         :rtype: str
 
-        :raises MappingException: The source repository URL is not under the
-                                  source base URL, or the path segment after
-                                  the base URL is not the source organization.
+        :raises MappingException: The path segment after the base URL's path
+                                  is not the source organization.
         """
-        source_base = urlsplit(source_repo_base_url)
-        source = urlsplit(source_repo_url)
-
-        base_segments = ConversionMapper.__segments(source_base.path)
-        source_segments = ConversionMapper.__segments(source.path)
+        base_segments = ConversionMapper.__segments(urlsplit(source_repo_base_url).path)
+        source_segments = ConversionMapper.__segments(urlsplit(source_repo_url).path)
         prefix = source_segments[: len(base_segments)]
 
-        if (
-            source.scheme.casefold() != source_base.scheme.casefold()
-            or source.netloc.casefold() != source_base.netloc.casefold()
-            or [s.casefold() for s in prefix] != [s.casefold() for s in base_segments]
-        ):
-            raise MappingException.url_not_under_base(
-                source_repo_url, source_repo_base_url
-            )
-
-        org_and_path = source_segments[len(base_segments) :]
+        if [s.casefold() for s in prefix] == [s.casefold() for s in base_segments]:
+            org_and_path = source_segments[len(base_segments) :]
+        else:
+            org_and_path = source_segments
         if (
             len(org_and_path) == 0
             or org_and_path[0].casefold() != source_repo_org.casefold()
@@ -170,9 +163,10 @@ class ConversionMapper(ABC):
     ) -> str:
         """Builds the target repository URL for a source repository URL.
 
-        The scheme, host, base path, and organization are compared without
-        regard to case.  Trailing slashes on the base URLs are ignored, and the
-        query and fragment of the source URL are kept.
+        The source repository URL is not required to be under the source base
+        URL; see `_source_repo_path` for how the organization is found.
+        Trailing slashes on the base URLs are ignored, and the query and
+        fragment of the source URL are kept.
 
         :param source_repo_base_url: The base URL of the source SCM, for
                                      example ``https://github.com``.
@@ -196,9 +190,8 @@ class ConversionMapper(ABC):
         :return: The target repository URL.
         :rtype: str
 
-        :raises MappingException: The source repository URL is not under the
-                                  source base URL, or the path segment after
-                                  the base URL is not the source organization.
+        :raises MappingException: The path segment after the source base URL's
+                                  path is not the source organization.
         """
         source = urlsplit(source_repo_url)
         mapped = self._map_repo_path(

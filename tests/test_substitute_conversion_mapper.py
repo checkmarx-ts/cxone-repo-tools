@@ -69,12 +69,17 @@ class SubstituteConversionMapperTestCase(unittest.TestCase):
             "https://ghe.example.com/new-org",
         )
 
-    def test_base_url_and_org_still_validated(self):
+    def test_org_still_validated(self):
         mapper = SubstituteConversionMapper(r"(?P<repo>.+)", "{repo}", None)
         with self.assertRaises(MappingException):
-            convert(mapper, "https://gitlab.com/acme/widgets")
-        with self.assertRaises(MappingException):
             convert(mapper, "https://github.com/other/widgets")
+
+    def test_base_url_not_checked(self):
+        mapper = SubstituteConversionMapper(r"(?P<repo>.+)", "{repo}", None)
+        self.assertEqual(
+            convert(mapper, "https://gitlab.com/acme/widgets"),
+            "https://ghe.example.com/new-org/widgets",
+        )
 
     def test_convert_project_with_none_project_substitution_returns_none(self):
         mapper = SubstituteConversionMapper(
@@ -124,16 +129,21 @@ class SubstituteConversionMapperTestCase(unittest.TestCase):
             )
         self.assertIn("branch", str(ctx.exception))
 
-    def test_convert_project_validates_base_url_and_org(self):
+    def test_convert_project_validates_org(self):
         mapper = SubstituteConversionMapper(r"(?P<repo>.+)", "{repo}", "{repo}")
-        with self.assertRaises(MappingException):
-            mapper.convert_project(
-                "https://github.com", "https://gitlab.com/acme/widgets", "acme"
-            )
         with self.assertRaises(MappingException):
             mapper.convert_project(
                 "https://github.com", "https://github.com/other/widgets", "acme"
             )
+
+    def test_convert_project_does_not_check_base_url(self):
+        mapper = SubstituteConversionMapper(r"(?P<repo>.+)", "{repo}", "{repo}")
+        self.assertEqual(
+            mapper.convert_project(
+                "https://github.com", "https://gitlab.com/acme/widgets", "acme"
+            ),
+            "widgets",
+        )
 
     def test_project_substitution_is_required(self):
         with self.assertRaises(TypeError):
