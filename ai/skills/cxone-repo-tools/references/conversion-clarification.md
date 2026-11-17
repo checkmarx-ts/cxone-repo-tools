@@ -64,6 +64,12 @@
   path.  The mapping rules are designed to transform the SCM path that leads to the repository
   (for example, the organization and any groups) rather than to rename the repository, so a
   repository that keeps its name is the case the mapping handles best.
+* When planning a move of code repositories to a new SCM, recommend that each repository in the
+  new SCM has the same protected branches as it has in the source SCM.  The conversion sets each
+  project's protected branches to the ones the project has before the conversion, so the
+  conversion may fail for repositories whose branches differ in the new SCM.  If that happens,
+  the recovery file can be modified to set the correct branches before recovery runs; see
+  `Conversion Recovery`.
 * If converting projects to the same SCM instance while only changing the
   authentication method (e.g. changing Github OAuth to Github App), there is generally
   no need to change project names or have a URL re-mapping.  The user will need
@@ -144,6 +150,10 @@ Recovery is how an interrupted or partially failed conversion is completed.
   deleted by the user.
 * Recovery failures can happen when repositories are misconfigured or have been renamed and the stored repository URL
   is no longer valid.  The recovery file can be edited to supply the correct repository URL before the next run.
+* Recovery failures can also happen when a repository's protected branches in the target SCM differ from the
+  project's protected branches.  The recovery file can be edited to set the branches to use during recovery.  In
+  the recovery file, each project's entry under `conversion`, keyed by project id, holds the repository URL in
+  `scmRepositoryUrl` and the protected branch names in the `protectedBranches` list.
 * If a project is disconnected and there is no recovery file for it, recovery is not possible.  The project must be
   re-connected with the command that connects a project to an SCM, supplying the SCM id, organization, repository name,
   protected branches, and engine settings.  A project export taken before the conversion is the source for those values.
