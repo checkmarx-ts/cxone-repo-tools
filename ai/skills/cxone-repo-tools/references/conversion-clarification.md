@@ -64,6 +64,13 @@
   path.  The mapping rules are designed to transform the SCM path that leads to the repository
   (for example, the organization and any groups) rather than to rename the repository, so a
   repository that keeps its name is the case the mapping handles best.
+* Some conversions match the repository name case-sensitively, so recommend keeping the letter
+  casing of each repository name the same in the new SCM.  The repository name in the target
+  repository URL comes from the source repository URL, so a difference only in casing can make
+  the conversion fail.  For example, a Bitbucket repository URL for the repository `webgoat` will
+  not match a GitHub repository named `WebGoat`.  If a conversion fails for this reason, the
+  recovery file can be edited to correct the letter casing so the conversion can finish; see
+  `Conversion Recovery`.
 * When planning a move of code repositories to a new SCM, recommend that each repository in the
   new SCM has the same protected branches as it has in the source SCM.  The conversion sets each
   project's protected branches to the ones the project has before the conversion, so the
@@ -154,6 +161,10 @@ Recovery is how an interrupted or partially failed conversion is completed.
   project's protected branches.  The recovery file can be edited to set the branches to use during recovery.  In
   the recovery file, each project's entry under `conversion`, keyed by project id, holds the repository URL in
   `scmRepositoryUrl` and the protected branch names in the `protectedBranches` list.
+* Recovery failures can also happen when the target SCM matches repository names case-sensitively and the
+  repository name in `scmRepositoryUrl` differs from the target repository's name only in letter casing.  For
+  example, `.../webgoat` will not match a GitHub repository named `WebGoat`.  Edit `scmRepositoryUrl` in the
+  recovery file so the repository name has the target repository's exact casing, then run recovery again.
 * If a project is disconnected and there is no recovery file for it, recovery is not possible.  The project must be
   re-connected with the command that connects a project to an SCM, supplying the SCM id, organization, repository name,
   protected branches, and engine settings.  A project export taken before the conversion is the source for those values.
