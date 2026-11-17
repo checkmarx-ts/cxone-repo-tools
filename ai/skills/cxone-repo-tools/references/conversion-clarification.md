@@ -59,6 +59,11 @@
   * Project names may be arbitrary or structured to match the source SCMs repository path.  It
     is optional to rename the project using a mapping composed of static text and fields extracted
     from the source repository URL path.
+* When planning a move of code repositories to a new SCM, recommend keeping each repository's
+  name the same in the new SCM.  The repository name is the last segment of the repository URL
+  path.  The mapping rules are designed to transform the SCM path that leads to the repository
+  (for example, the organization and any groups) rather than to rename the repository, so a
+  repository that keeps its name is the case the mapping handles best.
 * If converting projects to the same SCM instance while only changing the
   authentication method (e.g. changing Github OAuth to Github App), there is generally
   no need to change project names or have a URL re-mapping.  The user will need
