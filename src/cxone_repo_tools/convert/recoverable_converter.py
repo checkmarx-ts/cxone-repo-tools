@@ -2,9 +2,11 @@ import asyncio, aiofiles, aiocsv, csv, logging
 from pathlib import Path
 from tqdm.asyncio import tqdm
 from typing import List, Dict
-from .exceptions import ConversionException
-from cxone_api import CxOneClient
+from cxone_repo_tools.exceptions import ConversionException
+from cxone_repo_tools.client import CxOneRepoToolsClient
+from cxone_api.exceptions import CommunicationException
 from cxone_api.util import json_on_ok
+from cxone_api.low.projects import update_specific_project_fields
 from cxone_api.low.code_repository_management import disconnect_project_from_scm
 from cxone_api.low.code_repository_project_conversion import (
     convert_a_project,
@@ -25,10 +27,27 @@ class RecoverableConverter:
 
     def __init__(
         self,
-        client: CxOneClient,
+        client: CxOneRepoToolsClient,
         report_path: str,
+        scm_token: str | None,
         threads: int = 2,
     ):
+        """Initializes the converter.
+
+        :param client: The client used to make Checkmarx One API calls.
+        :type client: CxOneRepoToolsClient
+
+        :param report_path: The path of the conversion report file.
+        :type report_path: str
+
+        :param scm_token: The SCM PAT for SCMs that require a token for
+                          conversion, or None if no token was provided.
+        :type scm_token: str | None
+
+        :param threads: The maximum number of concurrent operations.
+                        Defaults to 2.
+        :type threads: int, optional
+        """
         self._client = client
         self._threads = asyncio.Semaphore(threads)
 
@@ -37,6 +56,16 @@ class RecoverableConverter:
         self._conversion_threads = asyncio.Semaphore(1)
 
         self._report = report_path
+        self.__scm_token = scm_token
+
+    @property
+    def _scm_token(self) -> str | None:
+        """The SCM PAT for SCMs that require a token for conversion, or None
+        if no token was provided.
+
+        :rtype: str | None
+        """
+        return self.__scm_token
 
     async def _enable_repo_incremental(self, project_id: str) -> bool:
 
@@ -45,9 +74,38 @@ class RecoverableConverter:
         return await repo_cfg.update_repository_toggles(sastIncrementalScan=True)
 
     @staticmethod
-    async def convert_project_and_wait(client: CxOneClient, payload: Dict) -> Dict:
+    async def convert_project_and_wait(
+        client: CxOneRepoToolsClient, payload: Dict
+    ) -> Dict:
+        """Submits a project conversion request and waits for the conversion
+        to finish.
 
-        convert_response = json_on_ok(await convert_a_project(client, payload))
+        :param client: The client used to make Checkmarx One API calls.
+        :type client: CxOneRepoToolsClient
+
+        :param payload: The conversion API payload.  It can contain the SCM
+                        token.
+        :type payload: Dict
+
+        :return: The final conversion status.
+        :rtype: Dict
+
+        :raises ConversionException: The conversion request failed after all
+                                     retries.
+        :raises ResponseException: A conversion API response was not
+                                   successful.
+        """
+        try:
+            response = await convert_a_project(client, payload)
+        except CommunicationException as ex:
+            # The exception message includes the request payload, which can
+            # contain the SCM token.  It is replaced, and "from None" keeps it
+            # out of the exception chain so tracebacks cannot show it.
+            raise ConversionException.conversion_request_failed(
+                ex.response.status_code if ex.response is not None else None
+            ) from None
+
+        convert_response = json_on_ok(response)
         process_id = convert_response.get("processId")
 
         _log.info(f"Process Id: {process_id} : {convert_response.get('message')}")
@@ -59,6 +117,10 @@ class RecoverableConverter:
                 _log.info(
                     f"Process {process_id} complete: {status.get('migrationStatus')} {status.get('summary')}"
                 )
+                failed_list = status.get("failedProjectList", [])
+                if len(failed_list) > 0:
+                    for fmsg in failed_list:
+                        _log.error(fmsg)
                 return status
             else:
                 _log.debug(f"Waiting for migration processId {process_id} to finish.")
@@ -72,42 +134,67 @@ class RecoverableConverter:
             await batch.begin_recovery_mode()
 
             for id in batch.disconnect_projects:
-                await disconnect_project_from_scm(self._client, id)
+                if not (await disconnect_project_from_scm(self._client, id)).ok:
+                    raise ConversionException.disconnect_failed(id)
 
-            status = await self.convert_project_and_wait(
+                # MUST rename the project when it is disconnected.  The API
+                # will reject a name change for an SCM connected project.
+                target_name = batch.get_new_project_name(id)
+                if target_name is not None:
+                    if not (
+                        await update_specific_project_fields(
+                            self._client, id, name=target_name
+                        )
+                    ).ok:
+                        # Previous failure may have named the project correctly but the API
+                        # will return an error trying to name it to an "existing project name"
+                        cfg = await ProjectRepoConfig.from_project_id(self._client, id)
+                        if cfg.name != target_name:
+                            raise ConversionException.rename_failed(id, target_name)
+
+            status = await RecoverableConverter.convert_project_and_wait(
                 self._client, batch.as_api_payload()
             )
 
-            for converted in status.get("successfulProjectsList", []):
+            conversion_failures = {}
+            # Response payload successfully converted project names will
+            # not likely match the actual project name, so all projects
+            # need to be checked if they are connected.
+            if status.get("migrationStatus") in ["OK", "PARTIAL"]:
+                for id in batch.disconnect_projects:
+                    repo_cfg = await ProjectRepoConfig.from_project_id(self._client, id)
+                    if await repo_cfg.is_scm_imported:
+                        if batch.check_sast_incremental_enabled(id):
+                            try:
+                                assert await self._enable_repo_incremental(id)
+                            except Exception as ex:  # pylint: disable=W0718
+                                _log.warning(
+                                    f"Enabling SAST incremental scans for {repo_cfg.name} failed: {ex}",
+                                    exc_info=True,
+                                )
+                                raise ConversionException.failure_enable_sast_incrementals(
+                                    repo_cfg.name
+                                )
 
-                project_id = batch.get_project_id(converted)
-
-                if batch.check_sast_incremental_enabled(project_id):
-                    try:
-                        assert await self._enable_repo_incremental(project_id)
-                    except Exception as ex:
-                        _log.warning(
-                            f"Enabling SAST incremental scans for {converted} failed: {ex}",
-                            exc_info=True,
-                        )
-                        raise ConversionException.failure_enable_sast_incrementals(
-                            converted
-                        )
-
-                await writer.writerow(
-                    [batch.get_project_id(converted), converted, "SUCCESS"]
-                )
-                await batch.project_complete(project_id)
+                        await writer.writerow([id, repo_cfg.name, "SUCCESS"])
+                        await batch.project_complete(id)
+                    else:
+                        conversion_failures[id] = repo_cfg
 
             if batch.size > 0:
-                for failed in batch.batch_projects:
-                    await writer.writerow(
-                        [batch.get_project_id(failed), failed, "FAILED"]
-                    )
+                for id in batch.disconnect_projects:
+                    failed_cfg = conversion_failures.get(id)
+
+                    if failed_cfg is None:
+                        failed_cfg = await ProjectRepoConfig.from_project_id(
+                            self._client, id
+                        )
+
+                    await writer.writerow([failed_cfg.id, failed_cfg.name, "FAILED"])
 
     async def _process_batches(
         self,
-        batches: List[List[ConversionBatch]],
+        batches: List[ConversionBatch],
         batch_desc: str,
         *,
         max_batches: int = 0,
@@ -124,11 +211,10 @@ class RecoverableConverter:
 
             tasks = []
             batch_count = 0
-            for scm_batches in batches:
-                for org_batch in scm_batches:
-                    if max_batches == 0 or batch_count < max_batches:
-                        tasks.append(self.__process_single_batch(org_batch, writer))
-                    batch_count += 1
+            for org_batch in batches:
+                if max_batches == 0 or batch_count < max_batches:
+                    tasks.append(self.__process_single_batch(org_batch, writer))
+                batch_count += 1
 
             await tqdm.gather(*tasks, desc=batch_desc)
 
@@ -136,10 +222,9 @@ class RecoverableConverter:
         # Recovery means validation has already happened for those
         # conversions being recovered.  Assuming the CxOne credentials
         # are valid, resume conversions for recovery batches.
-        recovery_batches = ConversionBatch.load_recovery_batches()
+        recovery_batches = ConversionBatch.load_recovery_batches(self._scm_token)
         if recovery_batches is not None:
-            batches = [[batch] for batch in recovery_batches]
-            await self._process_batches(batches, "Recovering")
+            await self._process_batches(recovery_batches, "Recovering")
 
     async def convert(self):
         await self._recover()

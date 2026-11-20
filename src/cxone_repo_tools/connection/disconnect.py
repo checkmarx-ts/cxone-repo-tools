@@ -2,7 +2,7 @@ from __future__ import annotations
 import asyncio
 from tqdm.asyncio import tqdm
 from typing import AsyncGenerator, List
-from cxone_api import CxOneClient
+from cxone_repo_tools.client import CxOneRepoToolsClient
 from cxone_api.util import page_generator
 from cxone_api.low.code_repository_management import (
     retrieve_scm_projects,
@@ -14,7 +14,7 @@ from cxone_repo_tools.consts import MAX_RECORD_COUNT, MAX_NAMES_IN_QUERY
 
 class Disconnector:
 
-    def __init__(self, client: CxOneClient, threads: int = 2):
+    def __init__(self, client: CxOneRepoToolsClient, threads: int = 2):
         self.__client = client
         self.__task = None
         self.__threads = asyncio.Semaphore(threads)
@@ -70,13 +70,17 @@ class Disconnector:
             await disconnect_project_from_scm(self.__client, project_id)
 
     @staticmethod
-    def from_scm_id(client: CxOneClient, scm_id: int, **kwargs) -> Disconnector:
+    def from_scm_id(
+        client: CxOneRepoToolsClient, scm_id: int, **kwargs
+    ) -> Disconnector:
         inst = Disconnector(client, **kwargs)
         inst.__task = inst.__disconnect_scm(scm_id)
         return inst
 
     @staticmethod
-    def from_project_id(client: CxOneClient, project_id: str, **kwargs) -> Disconnector:
+    def from_project_id(
+        client: CxOneRepoToolsClient, project_id: str, **kwargs
+    ) -> Disconnector:
         inst = Disconnector(client, **kwargs)
         inst.__task = inst.__disconnect_project(project_id)
         return inst

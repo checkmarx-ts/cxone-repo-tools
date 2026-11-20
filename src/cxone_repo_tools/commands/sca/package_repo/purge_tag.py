@@ -9,7 +9,7 @@ from .util import (
     collect_project_exclusions,
     remove_project_sca_exclusions,
 )
-from cxone_repo_tools.convert import (
+from cxone_repo_tools.exceptions import (
     AbortedConversionException,
     InvalidRepositoryConfiguration,
 )

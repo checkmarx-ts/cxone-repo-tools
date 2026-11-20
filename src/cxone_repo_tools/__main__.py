@@ -3,7 +3,7 @@ from docopt import docopt, DocoptExit
 from . import AGENT
 from .client import mt_endpoints, CxOneClientFactory
 from .log import configure_logging
-from .convert import (
+from .exceptions import (
     ConversionException,
     AbortedConversionException,
     InvalidRepositoryConfiguration,
@@ -89,6 +89,7 @@ async def main():
                                   type for each tag.
     create-tag                    Create a tag and its configurations from package manager
                                   configuration files.
+    delete-config                 Delete a single configuration by its configuration ID.
     disassoc-tag                  Disassociate a tag's configurations from a single project.
     inspect-project               Show the configurations associated with a single project.
     inspect-tag                   Show the configurations associated with a configuration tag.

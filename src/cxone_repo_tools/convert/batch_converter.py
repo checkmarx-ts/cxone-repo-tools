@@ -1,18 +1,16 @@
-from tqdm.asyncio import tqdm
-from typing import List, AsyncGenerator
-from .exceptions import ConversionException
-from cxone_api import CxOneClient
-from cxone_api.util import json_on_ok, page_generator
-from cxone_api.low.code_repository_management import (
-    retrieve_list_of_scms,
-    retrieve_scm_projects,
-)
-from cxone_api.low.projects import retrieve_list_of_projects
+import asyncio, logging
+from typing import List
+from cxone_repo_tools.exceptions import ConversionException
+from cxone_repo_tools.client import CxOneRepoToolsClient
 from cxone_api.high.projects import ProjectRepoConfig
 from cxone_api.high.misc import FeatureFlagInspector
-from cxone_repo_tools.consts import MAX_RECORD_COUNT, DISCO_API_FLAG, MAX_NAMES_IN_QUERY
+from cxone_repo_tools.consts import DISCO_API_FLAG
+from cxone_repo_tools.index import ScmProjectIndex, ScmProjectIndexFactory
 from .batch import ConversionBatch
+from .mapping import ConversionMapper
 from .recoverable_converter import RecoverableConverter
+
+_log = logging.getLogger(__name__)
 
 
 class BatchConverter(RecoverableConverter):
@@ -21,20 +19,84 @@ class BatchConverter(RecoverableConverter):
 
     def __init__(
         self,
-        client: CxOneClient,
+        client: CxOneRepoToolsClient,
         source_ids: List[int],
         target_id: int,
+        target_org: str,
+        mapper: ConversionMapper,
+        scm_token: str | None,
         report_path: str,
         threads: int = 2,
     ):
-        super().__init__(client, report_path, threads)
+        """Initializes the converter.  The SCM project index that matches the
+        deployment the client is connected to is created on first use.
+
+        :param client: The client used to make Checkmarx One API calls.
+        :type client: CxOneRepoToolsClient
+
+        :param source_ids: The IDs of the SCMs whose projects are converted.
+        :type source_ids: List[int]
+
+        :param target_id: The ID of the SCM the projects are converted to.
+        :type target_id: int
+
+        :param target_org: The name of the SCM target organization.
+        :type target_org: str
+
+        :param mapper: Maps source repository URLs to target repository URLs.
+        :type mapper: ConversionMapper
+
+        :param scm_token: The SCM PAT for SCMs that require a token for
+                          conversion, or None if no token was provided.
+        :type scm_token: str | None
+
+        :param report_path: The path of the conversion report file.
+        :type report_path: str
+
+        :param threads: The maximum number of concurrent operations.
+                        Defaults to 2.
+        :type threads: int, optional
+        """
+        super().__init__(client, report_path, scm_token, threads)
 
         self.__source_ids = source_ids
+        self.__target_org = target_org
         self.__target_id = target_id
+        self.__mapper = mapper
+        self.__index_threads = threads
+        self.__index_instance: ScmProjectIndex | None = None
+        self.__index_lock = asyncio.Lock()
+        self.__conversion_cfgs = None
 
         self.__scm_data = {}
 
-    async def __validate_conversion(self, override_url_mismatch: bool):
+    @property
+    async def __index(self) -> ScmProjectIndex:
+        """The SCM project index for the deployment the client is connected to.
+        It is created with `ScmProjectIndexFactory.create_index` the first time
+        it is accessed and reused afterwards.
+
+        :rtype: ScmProjectIndex
+
+        :raises ResponseException: The index could not be created.
+        """
+        async with self.__index_lock:
+            if self.__index_instance is None:
+                self.__index_instance = await ScmProjectIndexFactory.create_index(
+                    self._client, threads=self.__index_threads
+                )
+        return self.__index_instance
+
+    async def __validate_conversion(self):
+        """Validates that a conversion can run: the disconnect API feature
+        flag is enabled, and the target SCM and every source SCM exist in the
+        index.  The data of the source and target SCMs is retained for the
+        conversion.
+
+        :raises ConversionException: The disconnect API feature flag is not
+                                     enabled, the target SCM is not found, or
+                                     one or more source SCMs are not found.
+        """
         flag_insp = await FeatureFlagInspector.create(self._client)
 
         if flag_insp[DISCO_API_FLAG] is None or not flag_insp[DISCO_API_FLAG].Status:
@@ -42,25 +104,21 @@ class BatchConverter(RecoverableConverter):
 
         source_map = {}
         target_id_found = False
-        target_type = None
 
-        base_urls = {}
-
-        for scm in json_on_ok(await retrieve_list_of_scms(self._client)):
-            base_urls[int(scm.get("id"))] = scm.get("repoBaseUrl")
+        index = await self.__index
+        for scm_id in await index.get_scm_ids():
+            scm = await index.get_scm_data(scm_id)
 
             add = False
-            id = str(scm.get("id"))
-            if id in self.__source_ids:
-                source_map[id] = scm.get("type")
+            if scm_id in self.__source_ids:
+                source_map[scm_id] = scm.type
                 add = True
-            elif id == self.__target_id:
+            elif scm_id == self.__target_id:
                 target_id_found = True
-                target_type = scm.get("type")
                 add = True
 
             if add:
-                self.__scm_data[scm.get("id")] = scm
+                self.__scm_data[scm_id] = scm
 
         if not target_id_found:
             raise ConversionException.target_scm_not_found(self.__target_id)
@@ -71,129 +129,55 @@ class BatchConverter(RecoverableConverter):
         if len(missing_sources) > 0:
             raise ConversionException.source_scms_not_found(missing_sources)
 
-        for source_id in source_map.keys():
-            if source_map[source_id] not in BatchConverter.__COMPATIBLE_MAP.get(
-                target_type, []
-            ):
-                raise ConversionException.incompatible(
-                    source_id, source_map[source_id], self.__target_id, target_type
-                )
-
-        if not override_url_mismatch:
-            repo_base_urls = set(
-                [scm_data.get("repoBaseUrl") for scm_data in self.__scm_data.values()]
-            )
-            if len(repo_base_urls) > 1:
-                raise ConversionException.scm_base_urls_different(repo_base_urls)
-
-    async def __get_single_project_generators(self, single_project: str):
-        return [
-            page_generator(
-                retrieve_list_of_projects,
-                "projects",
-                client=self._client,
-                ids=[single_project],
-            )
-        ]
-
-    async def __get_scm_project_name_generators(self, scm_id: int):
-        names = []
-        async for name in page_generator(
-            retrieve_scm_projects,
-            "projects",
-            client=self._client,
-            scmid=scm_id,
-            limit=MAX_RECORD_COUNT,
-        ):
-            names.append(name)
-
-        generators = []
-
-        while len(names) > 0:
-            generators.append(
-                page_generator(
-                    retrieve_list_of_projects,
-                    "projects",
-                    client=self._client,
-                    limit=MAX_RECORD_COUNT,
-                    names=names[:MAX_NAMES_IN_QUERY],
-                )
-            )
-
-            del names[:MAX_NAMES_IN_QUERY]
-
-        return generators
-
-    async def __get_scm_project_generators(
-        self, scm_id: int, *, single_project: str = None
-    ) -> List[AsyncGenerator]:
-        async with self._threads:
-            if single_project is not None:
-                return await self.__get_single_project_generators(single_project)
-            else:
-                return await self.__get_scm_project_name_generators(scm_id)
-
     async def _include_in_batch(self, repo_cfg: ProjectRepoConfig) -> bool:
         return True
-
-    async def __get_conversion_batches(
-        self,
-        project_data_gen: AsyncGenerator,
-    ) -> List[ConversionBatch]:
-        batches = []
-
-        cur_batches_by_org = {}
-
-        async with self._threads:
-            async for project_data in project_data_gen:
-                repo_cfg = await ProjectRepoConfig.from_project_json(
-                    self._client, project_data
-                )
-
-                if await self._include_in_batch(repo_cfg):
-                    repo_org = await repo_cfg.scm_org
-
-                    if cur_batches_by_org.get(repo_org) is None or (
-                        cur_batches_by_org.get(repo_org) is not None
-                        and cur_batches_by_org[repo_org].size
-                        >= BatchConverter.__BATCH_SIZE
-                    ):
-                        cur_batches_by_org[repo_org] = ConversionBatch(
-                            repo_org,
-                            self.__scm_data[int(self.__target_id)].get("type"),
-                            self.__scm_data[int(self.__target_id)].get("repoBaseUrl"),
-                        )
-                        batches.append(cur_batches_by_org[repo_org])
-
-                    await cur_batches_by_org[repo_org].add(repo_cfg)
-
-        return batches
 
     async def __convert_projects(
         self,
         *,
         max_batches: int = 0,
-        project_id: str = None,
     ):
-        data_gen_lists = await tqdm.gather(
-            *[
-                self.__get_scm_project_generators(id, single_project=project_id)
-                for id in self.__scm_data.keys()
-                if id != int(self.__target_id)
-            ],
-            desc="Gathering projects",
+        batches = []
+
+        convert_count = 0
+
+        cur_batches_by_org = {}
+
+        for repo_cfg in self.__conversion_cfgs:
+            if await self._include_in_batch(repo_cfg):
+                if cur_batches_by_org.get(self.__target_org) is None or (
+                    cur_batches_by_org.get(self.__target_org) is not None
+                    and cur_batches_by_org[self.__target_org].size
+                    >= BatchConverter.__BATCH_SIZE
+                ):
+                    cur_batches_by_org[self.__target_org] = ConversionBatch(
+                        self.__target_org,
+                        self.__scm_data[int(self.__target_id)].type,
+                        self.__scm_data[int(self.__target_id)].repoBaseUrl,
+                        self._scm_token,
+                    )
+                    batches.append(cur_batches_by_org[self.__target_org])
+
+                target_repo_url = self.__mapper.convert_repo_url(
+                    self.__scm_data[await repo_cfg.scm_id].repoBaseUrl,
+                    await repo_cfg.repo_url,
+                    await repo_cfg.scm_org,
+                    self.__scm_data[int(self.__target_id)].repoBaseUrl,
+                    self.__target_org,
+                )
+                target_project_name = self.__mapper.convert_project(
+                    self.__scm_data[await repo_cfg.scm_id].repoBaseUrl,
+                    await repo_cfg.repo_url,
+                    await repo_cfg.scm_org,
+                )
+                await cur_batches_by_org[self.__target_org].add(
+                    repo_cfg, target_repo_url, target_project_name
+                )
+                convert_count += 1
+
+        _log.info(
+            f"{convert_count} projects found for conversion in {len(batches)} batches."
         )
-
-        # unpack list of lists
-        project_data_generators = [
-            generator for gen_list in data_gen_lists for generator in gen_list
-        ]
-
-        batches = await tqdm.gather(
-            *[self.__get_conversion_batches(gen) for gen in project_data_generators],
-            desc="Batching conversions",
-        )
-
         await self._process_batches(batches, "Converting", max_batches=max_batches)
 
     async def convert(
@@ -201,20 +185,31 @@ class BatchConverter(RecoverableConverter):
         *,
         max_batches: int = 0,
         project_id: str = None,
-        override_url_mismatch: bool = False,
         skip_recovery: bool = False,
     ):
         # Delegate recovery of any in-progress conversions to the base class.
         if not skip_recovery:
             await super().convert()
 
-        await self.__validate_conversion(override_url_mismatch)
-        await self.__convert_projects(max_batches=max_batches, project_id=project_id)
+        _log.info("Gathering projects...this may take a while.")
+        if project_id is not None:
+            cfg = ProjectRepoConfig.from_project_id(self._client, project_id)
+            if self.__target_id == await cfg.scm_id:
+                raise ConversionException.project_already_assigned(
+                    project_id, cfg.name, await cfg.scm_id
+                )
+            if await cfg.scm_id not in self.__source_ids:
+                raise ConversionException.project_not_connected_to_scms(
+                    project_id, cfg.name, self.__source_ids
+                )
 
-    __COMPATIBLE_MAP = {
-        "github": ["github", "githubApp"],
-        "githubApp": ["github", "githubApp"],
-        "azure": ["azure"],
-        "gitlab": ["gitlab"],
-        "bitbucket": ["bitbucket"],
-    }
+            self.__conversion_cfgs = [cfg]
+        else:
+            self.__conversion_cfgs = []
+            for source_id in self.__source_ids:
+                self.__conversion_cfgs += await (
+                    await self.__index
+                ).associated_projects(int(source_id))
+
+        await self.__validate_conversion()
+        await self.__convert_projects(max_batches=max_batches)

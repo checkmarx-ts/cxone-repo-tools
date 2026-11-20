@@ -9,7 +9,7 @@ from cxone_api.high.sca.registry import PackageRepositoryConfiguration
 from cxone_api.high.scan_configuration import ProjectScanConfiguration
 from cxone_repo_tools.commands.base import Command
 from .util import PACKAGE_MANAGERS
-from cxone_repo_tools.convert import AbortedConversionException
+from cxone_repo_tools.exceptions import AbortedConversionException
 from cxone_repo_tools.consts import MAX_RECORD_COUNT
 
 

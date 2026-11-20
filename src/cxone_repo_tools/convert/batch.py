@@ -8,14 +8,22 @@ from cxone_api.high.projects import ProjectRepoConfig
 class ConversionBatch:
     __RECOVER_FILE_EXT = ".recovery.json"
 
-    def __init__(self, org: str, scm_type: str, scm_url: str):
-        self.__org = org
-        self.__scm_type = scm_type
-        self.__scm_url = scm_url
+    def __init__(
+        self,
+        target_org: str,
+        target_scm_type: str,
+        target_scm_url: str,
+        target_scm_token: str | None,
+    ):
+        self.__target_scm_token = target_scm_token
+        self.__target_org = target_org
+        self.__target_scm_type = target_scm_type
+        self.__target_scm_url = target_scm_url
         self.__disconnect_projects = []
         self.__enable_sast_incremental_projects = []
         self.__project_convert_data = {}
-        self.__project_id_to_name_map = {}
+        self.__project_id_to_cur_name_map = {}
+        self.__project_id_to_target_name_map = {}
         self.__batch_id = str(uuid.uuid4())
         self.__file_lock = asyncio.Lock()
         self.__state_lock = asyncio.Lock()
@@ -24,42 +32,52 @@ class ConversionBatch:
     def to_dict(self) -> Dict:
         return {
             "batch_id": self.__batch_id,
-            "org": self.__org,
-            "scm_type": self.__scm_type,
-            "scm_url": self.__scm_url,
+            "target_org": self.__target_org,
+            "target_scm_type": self.__target_scm_type,
+            "target_scm_url": self.__target_scm_url,
             "disconnect": self.__disconnect_projects,
             "conversion": self.__project_convert_data,
-            "id2name": self.__project_id_to_name_map,
+            "id2name": self.__project_id_to_cur_name_map,
+            "targetnames": self.__project_id_to_target_name_map,
             "sast_inc_enabled": self.__enable_sast_incremental_projects,
         }
 
     @staticmethod
     def from_dict(
+        target_scm_token: str | None,
         *,
-        org: str,
-        scm_type: str,
-        scm_url: str,
+        target_org: str,
+        target_scm_type: str,
+        target_scm_url: str,
         batch_id: str,
         disconnect: List[str],
         conversion: Dict,
         id2name: Dict,
+        targetnames: Dict,
         sast_inc_enabled: List[str],
     ) -> ConversionBatch:
-        inst = ConversionBatch(org, scm_type, scm_url)
+        inst = ConversionBatch(
+            target_org, target_scm_type, target_scm_url, target_scm_token
+        )
         inst.__batch_id = batch_id
         inst.__disconnect_projects = disconnect
         inst.__project_convert_data = conversion
-        inst.__project_id_to_name_map = id2name
+        inst.__project_id_to_cur_name_map = id2name
+        inst.__project_id_to_target_name_map = targetnames
         inst.__enable_sast_incremental_projects = sast_inc_enabled
         return inst
 
     @staticmethod
-    def load_recovery_batches() -> List[ConversionBatch] | None:
+    def load_recovery_batches(
+        target_scm_token: str | None,
+    ) -> List[ConversionBatch] | None:
         loaded = []
 
         for recover_file in Path(".").glob(f"*{ConversionBatch.__RECOVER_FILE_EXT}"):
             with open(recover_file, "rt") as json_file:
-                loaded.append(ConversionBatch.from_dict(**json.load(json_file)))
+                loaded.append(
+                    ConversionBatch.from_dict(target_scm_token, **json.load(json_file))
+                )
 
         if len(loaded) == 0:
             return None
@@ -72,7 +90,7 @@ class ConversionBatch:
 
     @property
     def org(self) -> str:
-        return self.__org
+        return self.__target_org
 
     @property
     def size(self) -> int:
@@ -84,18 +102,26 @@ class ConversionBatch:
 
     @property
     def batch_projects(self) -> List[str]:
-        return list(self.__project_id_to_name_map.keys())
+        return list(self.__project_id_to_cur_name_map.keys())
 
     def get_project_id(self, project_name: str) -> str | None:
-        return self.__project_id_to_name_map.get(project_name)
+        return self.__project_id_to_cur_name_map.get(project_name)
+
+    def get_new_project_name(self, project_id: str) -> str | None:
+        return self.__project_id_to_target_name_map.get(project_id)
 
     def as_api_payload(self):
-        return {
+        payload = {
             "projects": list(self.__project_convert_data.values()),
-            "scmType": self.__scm_type,
-            "scmOnPremUrl": self.__scm_url,
-            "orgIdentity": self.__org,
+            "scmType": self.__target_scm_type,
+            "scmOnPremUrl": self.__target_scm_url,
+            "orgIdentity": self.__target_org,
         }
+
+        if self.__target_scm_token is not None:
+            payload["token"] = self.__target_scm_token
+
+        return payload
 
     @property
     def __recover_file_name(self) -> str:
@@ -127,8 +153,8 @@ class ConversionBatch:
             if project_id in self.__disconnect_projects:
                 self.__disconnect_projects.remove(project_id)
 
-            if project_id in self.__project_id_to_name_map.keys():
-                del self.__project_id_to_name_map[project_id]
+            if project_id in self.__project_id_to_cur_name_map.keys():
+                del self.__project_id_to_cur_name_map[project_id]
 
             if project_id in self.__project_convert_data.keys():
                 del self.__project_convert_data[project_id]
@@ -142,17 +168,23 @@ class ConversionBatch:
                     self.__recovery_mode = False
                     await self.__remove_recover_file()
 
-    async def add(self, repo_cfg: ProjectRepoConfig):
+    async def add(
+        self,
+        repo_cfg: ProjectRepoConfig,
+        target_repo_url: str,
+        target_project_name: str | None,
+    ):
         async with self.__state_lock:
             self.__disconnect_projects.append(repo_cfg.id)
-            self.__project_id_to_name_map[repo_cfg.name] = repo_cfg.id
+            self.__project_id_to_cur_name_map[repo_cfg.name] = repo_cfg.id
+            self.__project_id_to_target_name_map[repo_cfg.id] = target_project_name
 
             if await repo_cfg.sast_incremental_enabled:
                 self.__enable_sast_incremental_projects.append(repo_cfg.id)
 
             self.__project_convert_data[repo_cfg.id] = {
                 "cxProjectId": repo_cfg.id,
-                "scmRepositoryUrl": await repo_cfg.repo_url,
+                "scmRepositoryUrl": target_repo_url,
                 "protectedBranches": await repo_cfg.protected_branches,
                 "types": await repo_cfg.get_enabled_scanners(
                     await repo_cfg.primary_branch

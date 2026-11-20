@@ -3,7 +3,7 @@ from typing import List
 from cxone_api.high.sca.registry import PackageRepositoryConfiguration
 from cxone_repo_tools.commands.base import AbstractInspectCommand
 from .util import resolve_tag
-from cxone_repo_tools.convert import AbortedConversionException
+from cxone_repo_tools.exceptions import AbortedConversionException
 
 
 class InspectTagCommand(AbstractInspectCommand):

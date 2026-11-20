@@ -1,5 +1,4 @@
-from cxone_api import CxOneClient
-from cxone_api.exceptions import ResponseException, ConfigurationException
+from cxone_repo_tools.client import CxOneRepoToolsClient
 import asyncio, logging
 from tqdm.asyncio import tqdm
 from typing import Callable, Dict, List, Set, Tuple
@@ -9,11 +8,11 @@ from cxone_api.high.sca.registry import (
     PackageManagerType,
 )
 from cxone_api.high.scan_configuration import ProjectScanConfiguration
-from cxone_repo_tools.convert import InvalidRepositoryConfiguration
+from cxone_repo_tools.exceptions import InvalidRepositoryConfiguration
 
 
 async def resolve_tag(
-    client: CxOneClient, tag_id: str | None, tag_name: str | None
+    client: CxOneRepoToolsClient, tag_id: str | None, tag_name: str | None
 ) -> PackageRepositoryConfigurationTag | None:
     """Loads a tag by id, or by name when the id is not given.
 
@@ -102,7 +101,7 @@ async def collect_project_exclusions(
 
 
 async def __update_project_sca_exclusions(
-    client: CxOneClient,
+    client: CxOneRepoToolsClient,
     project_exclusions: Dict[str, Set[str]],
     threads: int,
     compute: Callable[[List[str], Set[str]], Tuple[List[str], List[str]]],
@@ -122,13 +121,7 @@ async def __update_project_sca_exclusions(
                 await project_cfg.SCA.Exclusions.setValue(",".join(new_value))
                 await project_cfg.commit_config()
                 _log.info(f"Project {project_id} SCA exclusions {action}: {changed}.")
-            # cxone-async-api exceptions derive from BaseException, so they are
-            # named explicitly; Exception alone would not catch them.
-            except (  # pylint: disable=broad-exception-caught
-                Exception,
-                ResponseException,
-                ConfigurationException,
-            ) as ex:
+            except Exception as ex:  # pylint: disable=broad-exception-caught
                 _log.error(
                     f"Failed to update SCA exclusions for project {project_id}: {ex}"
                 )
@@ -140,7 +133,7 @@ async def __update_project_sca_exclusions(
 
 
 async def add_project_sca_exclusions(
-    client: CxOneClient, project_exclusions: Dict[str, Set[str]], threads: int
+    client: CxOneRepoToolsClient, project_exclusions: Dict[str, Set[str]], threads: int
 ) -> None:
     """Appends the given exclusion filters to the SCA file exclusions of each
     project.  Filters already present are not added again and projects needing
@@ -156,7 +149,7 @@ async def add_project_sca_exclusions(
 
 
 async def remove_project_sca_exclusions(
-    client: CxOneClient, project_exclusions: Dict[str, Set[str]], threads: int
+    client: CxOneRepoToolsClient, project_exclusions: Dict[str, Set[str]], threads: int
 ) -> None:
     """Removes the given exclusion filters from the SCA file exclusions of each
     project.  Projects that have none of the filters are not written."""

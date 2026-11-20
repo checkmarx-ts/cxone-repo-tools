@@ -1,17 +1,19 @@
 from __future__ import annotations
 from typing import List
-from cxone_api import CxOneClient
+from cxone_repo_tools.client import CxOneRepoToolsClient
 
 
 class Command:
 
-    def __init__(self, client: CxOneClient | None, max_threads: int, version: str):
+    def __init__(
+        self, client: CxOneRepoToolsClient | None, max_threads: int, version: str
+    ):
         self.__client = client
         self.__threads = max_threads
         self.__version = version
 
     @property
-    def client(self) -> CxOneClient:
+    def client(self) -> CxOneRepoToolsClient:
         return self.__client
 
     @property
